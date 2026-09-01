@@ -20,10 +20,10 @@
 │   ├── user.h             ← เพิ่มใหม่ (โครงสร้าง User, Role: admin/staff/guest, auth)
 │   ├── utils.h            ← มีอยู่แล้ว
 │   └── xlsx.h             ← มีอยู่แล้ว (อ่าน/เขียน .xlsx หลาย sheet)
-├── public/                ← Frontend ดีไซน์หรูหรา Modern Luxury (Single-Page Multi-Portal)
+├── public/                ← ส่วน Frontend Webui
 │   ├── index.html         ← หน้าเว็บหลัก รวม 4 Portal (Guest, Staff Hub, Admin Panel, Floor Matrix)
 │   ├── admin.html         ← หน้าจัดการแอดมินเดิม (เชื่อมต่อ Theme และระบบ User)
-│   ├── style.css          ← ดีไซน์ระบบ Luxury, Dark/Light mode, Glassmorphism
+│   ├── style.css          ← ดีไซน์ระบบ Dark/Light mode, Glassmorphism
 │   ├── app.js             ← ตรรกะ Frontend เชื่อมต่อ REST API C++, เลือกรวมรูปห้อง, สลับ Role
 │   └── admin.js           ← สคริปต์แอดมินเดิม
 ├── src/
@@ -158,6 +158,10 @@ main_tui.cpp (Terminal TUI)
 | POST   | `/api/admin/reload`  | อ่านข้อมูลจากไฟล์ Excel `data/hotel.xlsx` เข้าหน่วยความจำใหม่           |
 
 ---
+
+### ระบบที่ทำเพิ่ม
+- login system สามารถ sign-in/sign-up ได้ มีrole แยก admin, staff, user
+- front-end แบบ webui กับ TUI 
 
 ## .gitignore ที่เพิ่ม
 
