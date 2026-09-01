@@ -73,6 +73,10 @@ std::string jsonStr(const std::string& b, const std::string& key, size_t maxLen)
     return out;
 }
 
+bool jsonHas(const std::string& b, const std::string& key) {
+    return b.find("\"" + key + "\"") != std::string::npos;
+}
+
 std::string at(const std::vector<std::string>& row, size_t i) {
     return i < row.size() ? row[i] : "";
 }

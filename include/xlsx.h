@@ -461,8 +461,21 @@ inline bool write(const std::string& path, const Book& book) {
     mz_zip_writer_end(&z);
     if (!ok) { std::remove(tmp.c_str()); return false; }
 
-    std::remove(path.c_str());
-    return std::rename(tmp.c_str(), path.c_str()) == 0;
+    // สลับไฟล์แบบปลอดภัย: ย้ายของเดิมไปเป็น .bak ก่อน ถ้าขั้นตอนไหนพลาด
+    // ไฟล์เดิมยังอยู่ครบ ไม่มีจังหวะที่ข้อมูลหายไปทั้งก้อน
+    if (std::rename(tmp.c_str(), path.c_str()) == 0) return true;   // POSIX: ทับได้เลย
+
+    std::string bak = path + ".bak";
+    std::remove(bak.c_str());
+    bool hadOld = (std::rename(path.c_str(), bak.c_str()) == 0);
+
+    if (std::rename(tmp.c_str(), path.c_str()) == 0) {
+        std::remove(bak.c_str());
+        return true;
+    }
+    if (hadOld) std::rename(bak.c_str(), path.c_str());             // กู้ของเดิมคืน
+    std::remove(tmp.c_str());
+    return false;
 }
 
 } // namespace xlsx

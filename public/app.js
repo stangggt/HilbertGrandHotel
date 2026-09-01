@@ -115,23 +115,63 @@ class HotelAppEngine {
     this.initTheme();
     this.loadSession();
     this.setupEvents();
-    await this.fetchRooms(true);
-    if (this.currentUser && (this.currentUser.role === "admin" || this.currentUser.role === "staff")) {
-      await this.fetchAdminData();
-    }
+    await this.refreshData();
     this.renderAll();
 
     // 2-second heartbeat
     setInterval(async () => {
-      await this.fetchRooms(false);
-      if (this.currentUser && (this.currentUser.role === "admin" || this.currentUser.role === "staff")) {
-        await this.fetchAdminData();
-      }
+      await this.refreshData();
       this.renderLiveViews();
     }, 2000);
   }
 
   // ---- REST API Calls ----
+
+  isStaffLevel() {
+    const role = this.currentUser && this.currentUser.role;
+    return role === "admin" || role === "staff";
+  }
+
+  // ดึงข้อมูลทุกอย่างที่บทบาทปัจจุบันต้องใช้ ในลำดับเดียวกันเสมอ
+  // (เดิมผู้ใช้ทั่วไปไม่เคยโหลด bookings เลย ทำให้ My Reservations ว่างตลอด)
+  async refreshData() {
+    await this.fetchRooms();
+    if (this.isStaffLevel()) {
+      await this.fetchAdminData();
+    } else if (this.currentUser) {
+      await this.fetchMyBookings();
+    } else {
+      this.bookings = [];
+    }
+  }
+
+  async fetchMyBookings() {
+    try {
+      const res = await fetch("/api/my-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booker: this.currentUser.fullName || this.currentUser.username || "",
+          phone: this.currentUser.phone || ""
+        })
+      });
+      const data = await res.json();
+      this.bookings = data.bookings || [];
+    } catch (e) {
+      console.warn("Failed to fetch /api/my-bookings", e);
+    }
+  }
+
+  // เตือนเมื่อเซิร์ฟเวอร์รับข้อมูลแล้วแต่เขียนลง hotel.xlsx ไม่สำเร็จ
+  // (เดิมหน้าเว็บขึ้นว่าสำเร็จทั้งที่ไฟล์ไม่ได้ถูกอัปเดต ข้อมูลจึงหายเมื่อรีสตาร์ต)
+  warnIfNotSaved(res) {
+    if (res && res.saved === false) {
+      this.toast(res.saveError || "บันทึกลงไฟล์ Excel ไม่สำเร็จ", "error");
+      return true;
+    }
+    return false;
+  }
+
   async fetchRooms(firstTime = false) {
     try {
       const res = await fetch("/api/rooms");
@@ -374,6 +414,7 @@ class HotelAppEngine {
       $("popoverSignOutBtn")?.addEventListener("click", (e) => {
         e.stopPropagation();
         this.saveSession(null);
+        this.bookings = [];
         this.activePortal = "guest";
         this.renderAll();
         this.toast("Signed out successfully");
@@ -401,8 +442,7 @@ class HotelAppEngine {
       else this.activePortal = "guest";
 
       this.toast(`⚡ Switched to ${res.user.fullName} (${targetRole.toUpperCase()})`);
-      await this.fetchRooms();
-      await this.fetchAdminData();
+      await this.refreshData();
       this.renderAll();
     } else {
       this.toast("Failed to switch role", "error");
@@ -625,9 +665,9 @@ class HotelAppEngine {
         let targetStatus = act === "checkin" ? "checkin" : (act === "checkout" ? "checkout" : "cancelled");
         const res = await this.updateBookingStatus(id, targetStatus);
         if (res.ok) {
+          this.warnIfNotSaved(res);
           this.toast(`Booking ${id} status updated to ${targetStatus}`);
-          await this.fetchRooms();
-          await this.fetchAdminData();
+          await this.refreshData();
           this.renderStaffPortal();
         } else {
           this.toast(res.error || "Update failed", "error");
@@ -893,9 +933,9 @@ class HotelAppEngine {
       const res = await this.bookRoom(r.number, booker, phone, email, checkIn, nights, note);
       if (res.ok) {
         this.closeDrawer();
+        this.warnIfNotSaved(res);
         this.toast(`✓ Reservation confirmed! Booking ID: ${res.booking.id}`);
-        await this.fetchRooms();
-        await this.fetchAdminData();
+        await this.refreshData();
         this.renderAll();
       } else {
         if (err) err.textContent = res.error || "Booking failed";
@@ -989,8 +1029,7 @@ class HotelAppEngine {
           this.saveSession(res.user);
           this.closeAuthModal();
           this.toast(`Logged in as ${res.user.fullName} (${res.user.role})`);
-          await this.fetchRooms();
-          await this.fetchAdminData();
+          await this.refreshData();
           this.renderAll();
         }
       });
@@ -1009,8 +1048,7 @@ class HotelAppEngine {
         this.saveSession(res.user);
         this.closeAuthModal();
         this.toast(`Welcome, ${res.user.fullName || res.user.username}`);
-        await this.fetchRooms();
-        await this.fetchAdminData();
+        await this.refreshData();
         this.renderAll();
       } else {
         if (err) err.textContent = res.error || "Invalid username or password";
@@ -1033,7 +1071,7 @@ class HotelAppEngine {
         this.saveSession(res.user);
         this.closeAuthModal();
         this.toast(`Account created! Welcome, ${res.user.fullName}`);
-        await this.fetchRooms();
+        await this.refreshData();
         this.renderAll();
       } else {
         if (err) err.textContent = res.error || "Registration failed";
@@ -1052,9 +1090,8 @@ class HotelAppEngine {
       const res = await this.updateRoomDetails(roomId, price, note);
       if (res.ok) {
         this.closeRoomEditModal();
-        this.toast(`Suite ${roomId} updated in Excel database`);
-        await this.fetchRooms();
-        await this.fetchAdminData();
+        if (!this.warnIfNotSaved(res)) this.toast(`Suite ${roomId} updated in Excel database`);
+        await this.refreshData();
         this.renderAdminPortal();
       } else {
         this.toast(res.error || "Update failed", "error");
@@ -1066,8 +1103,7 @@ class HotelAppEngine {
       const res = await this.reloadExcel();
       if (res.ok) {
         this.toast("Reloaded data/hotel.xlsx successfully");
-        await this.fetchRooms();
-        await this.fetchAdminData();
+        await this.refreshData();
         this.renderAdminPortal();
       } else {
         this.toast(res.error || "Reload failed", "error");

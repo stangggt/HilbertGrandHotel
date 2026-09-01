@@ -42,6 +42,19 @@ static const int PORT = 8093;
 
 using utils::q;
 
+// ต่อท้าย JSON ด้วยผลการเขียนไฟล์ Excel ครั้งล่าสุด
+// หน้าเว็บจะได้รู้ว่า "บันทึกขึ้นจอ" กับ "บันทึกลงไฟล์จริง" ตรงกันหรือไม่
+static std::string withSaveState(std::string obj) {
+    bool ok = hotel::lastSaveOk();
+    if (!obj.empty() && obj.back() == '}') obj.pop_back();
+    obj += ",\"saved\":";
+    obj += ok ? "true" : "false";
+    if (!ok) obj += ",\"saveError\":" + q("บันทึกลงไฟล์ data/hotel.xlsx ไม่สำเร็จ "
+                                          "ให้ปิดไฟล์ที่เปิดค้างใน Excel แล้วลองใหม่");
+    obj += "}";
+    return obj;
+}
+
 static std::string handle(const std::string& method,
                           const std::string& path,
                           const std::string& body) {
@@ -117,7 +130,27 @@ static std::string handle(const std::string& method,
             utils::jsonStr(body, "note", 200),
             "wait");
         if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
-        return utils::jsonOk("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}");
+        return utils::jsonOk(withSaveState("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}"));
+    }
+
+    // รายการจองของฉัน (ผู้ใช้ทั่วไป) — ค้นด้วยชื่อผู้จองหรือเบอร์โทร
+    if (path == "/api/my-bookings" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string booker = utils::jsonStr(body, "booker", 60);
+        std::string phone  = utils::jsonStr(body, "phone", 25);
+        std::ostringstream o;
+        o << "{\"ok\":true,\"bookings\":[";
+        bool first = true;
+        for (const auto& b : reservation::g_books) {
+            bool mine = (!booker.empty() && b.booker == booker) ||
+                        (!phone.empty()  && b.phone  == phone);
+            if (!mine) continue;
+            if (!first) o << ",";
+            first = false;
+            o << reservation::toJson(b);
+        }
+        o << "]}";
+        return utils::jsonOk(o.str());
     }
 
     // ============================================================
@@ -141,6 +174,7 @@ static std::string handle(const std::string& method,
               << "," << q("price")    << ":" << m.price
               << "," << q("note")     << ":" << q(m.note)
               << "," << q("typeName") << ":" << q(t ? t->name : m.bed)
+              << "," << q("booked")   << ":" << (b ? "true" : "false")
               << "," << q("booking")  << ":" << (b ? reservation::toJson(*b) : "null")
               << "}";
         }
@@ -159,7 +193,7 @@ static std::string handle(const std::string& method,
         Result r = reservation::setStatus(utils::jsonStr(body, "id", 12),
                                           utils::jsonStr(body, "status", 12));
         if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
-        return utils::jsonOk("{\"ok\":true}");
+        return utils::jsonOk(withSaveState("{\"ok\":true}"));
     }
 
     // แก้ไขรายละเอียดการจอง
@@ -176,7 +210,7 @@ static std::string handle(const std::string& method,
             nights,
             utils::jsonStr(body, "note", 200));
         if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
-        return utils::jsonOk("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}");
+        return utils::jsonOk(withSaveState("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}"));
     }
 
     // แอดมินเพิ่มการจองเอง (ลูกค้า walk-in)
@@ -196,7 +230,7 @@ static std::string handle(const std::string& method,
             if (r.httpCode == "409 Conflict") msg = "ห้องนี้ไม่ว่าง";
             return utils::jsonErr(r.httpCode, msg);
         }
-        return utils::jsonOk("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}");
+        return utils::jsonOk(withSaveState("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}"));
     }
 
     // แก้ราคาหรือหมายเหตุของห้อง (เขียนกลับลง sheet rooms)
@@ -208,10 +242,10 @@ static std::string handle(const std::string& method,
         long price = utils::jsonInt(body, "price", m->price);
         if (price < 0 || price > 1000000) return utils::jsonErr("400 Bad Request", "ราคาไม่ถูกต้อง");
         m->price = price;
-        m->note  = utils::jsonStr(body, "note", 120);
+        if (utils::jsonHas(body, "note")) m->note = utils::jsonStr(body, "note", 120);
         hotel::saveAll();
         std::cout << "[ROOM] " << m->id << " ราคา " << m->price << "\n";
-        return utils::jsonOk("{\"ok\":true}");
+        return utils::jsonOk(withSaveState("{\"ok\":true}"));
     }
 
     // อ่านไฟล์ Excel ใหม่ (กรณีแก้ด้วย Excel ระหว่างที่เซิร์ฟเวอร์รันอยู่)
@@ -236,9 +270,9 @@ static std::string handle(const std::string& method,
     if (utils::readFile("public" + file, content))
         return utils::resp("200 OK", utils::mimeOf(file), content);
 
-    // เปิดให้ดาวน์โหลดไฟล์ Excel ดิบจากหน้าแอดมิน
-    if (file.rfind("/data/", 0) == 0 && utils::readFile(file.substr(1), content))
-        return utils::resp("200 OK", utils::mimeOf(file), content);
+    // ปิดไม่ให้ดาวน์โหลดไฟล์ในโฟลเดอร์ data/ ผ่านเว็บ (ฐานข้อมูลมีรหัสผ่านผู้ใช้อยู่)
+    if (file.rfind("/data/", 0) == 0)
+        return utils::resp("403 Forbidden", "text/plain; charset=utf-8", "Forbidden");
 
     return utils::resp("404 Not Found", "text/html; charset=utf-8",
                        "<h1>404</h1><p>ไม่พบหน้านี้</p>");

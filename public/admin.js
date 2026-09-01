@@ -93,6 +93,16 @@ const api = {
   }
 };
 
+// เซิร์ฟเวอร์รับข้อมูลแล้วแต่เขียน hotel.xlsx ไม่ลง (เช่นเปิดค้างใน Excel)
+// ต้องบอกให้รู้ ไม่งั้นหน้าจอกับไฟล์จะไม่ตรงกันโดยไม่มีใครสังเกต
+function warnIfNotSaved(data) {
+  if (data && data.saved === false) {
+    toast(data.saveError || "บันทึกลงไฟล์ Excel ไม่สำเร็จ", true);
+    return true;
+  }
+  return false;
+}
+
 async function refresh() {
   // ระหว่างเปิดกล่องแก้ไข ไม่วาดตารางทับ กันค่าที่กำลังพิมพ์หาย
   if (editing || editRoom) return;
@@ -306,8 +316,9 @@ async function saveEdit() {
   }
 
   if (data.ok) {
+    const wasAdd = editing && editing.mode === "add";   // ต้องอ่านก่อน closeEdit() ล้างค่า
     closeEdit();
-    toast(editing && editing.mode === "add" ? "เพิ่มการจองแล้ว" : "บันทึกแล้ว");
+    if (!warnIfNotSaved(data)) toast(wasAdd ? "เพิ่มการจองแล้ว" : "บันทึกแล้ว");
     refresh();
   } else {
     $("m-err").textContent = data.error || "บันทึกไม่สำเร็จ";
@@ -318,7 +329,8 @@ async function setStatus(id, to) {
   if (to === "cancelled" && !confirm("ยกเลิกการจอง " + id + " ใช่ไหม")) return;
   const data = await api.post("/api/admin/status", { id, status: to });
   if (data.ok) {
-    toast(to === "cancelled" ? "ยกเลิกแล้ว" : "เปลี่ยนสถานะเป็น " + STATUS[to].label);
+    if (!warnIfNotSaved(data))
+      toast(to === "cancelled" ? "ยกเลิกแล้ว" : "เปลี่ยนสถานะเป็น " + STATUS[to].label);
     refresh();
   } else {
     toast(data.error || "เปลี่ยนสถานะไม่สำเร็จ", true);
@@ -351,7 +363,7 @@ async function saveRoom() {
   const data = await api.post("/api/admin/room", {
     room: editRoom, price, note: $("r-note").value.trim()
   });
-  if (data.ok) { closeRoom(); toast("บันทึกข้อมูลห้องแล้ว"); refresh(); }
+  if (data.ok) { closeRoom(); if (!warnIfNotSaved(data)) toast("บันทึกข้อมูลห้องแล้ว"); refresh(); }
   else         { $("r-err").textContent = data.error || "บันทึกไม่สำเร็จ"; }
 }
 
@@ -389,9 +401,10 @@ $("r-save").addEventListener("click", saveRoom);
 $("r-cancel").addEventListener("click", closeRoom);
 
 $("btn-reload").addEventListener("click", async () => {
-  await api.post("/api/admin/reload", {});
-  toast("อ่านไฟล์ Excel ใหม่แล้ว");
-  refresh();
+  // เดิมไม่ดูผลลัพธ์เลย อ่านไฟล์ไม่สำเร็จก็ยังขึ้นว่าสำเร็จ
+  const data = await api.post("/api/admin/reload", {});
+  if (data && data.ok) { toast("อ่านไฟล์ Excel ใหม่แล้ว"); refresh(); }
+  else toast((data && data.error) || "อ่านไฟล์ Excel ไม่สำเร็จ", true);
 });
 
 document.addEventListener("keydown", e => {

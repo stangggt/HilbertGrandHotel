@@ -160,13 +160,30 @@ foreach ($f in Get-ChildItem 'src\*.cpp')  {
     $objs += $o
 }
 
-Say "link -> build\server.exe"
-& g++ -std=c++17 -O2 -Iinclude src\main.cpp @objs -o build\server.exe @STATIC -lws2_32
-if ($LASTEXITCODE -ne 0) { Say "[!!] link server ไม่ผ่าน" Red; exit 1 }
+# ลิงก์: ลองแบบ static ก่อน (ได้ .exe ที่ไม่ต้องพึ่ง DLL ของ compiler)
+# ถ้าไม่ผ่าน ถอย -static ออกแล้วลองใหม่ MinGW บางชุดไม่มี .a ครบให้ลิงก์แบบ static
+function Link-Exe($label, $srcFile, $extraLibs) {
+    Say "link -> $label"
+    $base = @('-std=c++17','-O2','-Iinclude',$srcFile) + $objs + @('-o',$label)
+    $out = & g++ @base @STATIC @extraLibs 2>&1
+    if ($LASTEXITCODE -eq 0) { return $true }
 
-Say "link -> build\tui.exe"
-& g++ -std=c++17 -O2 -Iinclude src\main_tui.cpp @objs -o build\tui.exe @STATIC
-if ($LASTEXITCODE -ne 0) { Say "[!!] link tui ไม่ผ่าน" Red; exit 1 }
+    Say "[~~] ลิงก์แบบ static ไม่ผ่าน ลองใหม่แบบปกติ..." Yellow
+    $out2 = & g++ @base @extraLibs 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Say "[OK] ลิงก์ผ่านแบบปกติ (ต้องรัน .exe จากเครื่องที่มี compiler นี้)" Yellow
+        return $true
+    }
+
+    Say "[!!] link $label ไม่ผ่าน - ข้อความจาก g++:" Red
+    Write-Host ""
+    $out2 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkYellow }
+    Write-Host ""
+    return $false
+}
+
+if (-not (Link-Exe 'build\server.exe' 'src\main.cpp' @('-lws2_32'))) { exit 1 }
+if (-not (Link-Exe 'build\tui.exe'    'src\main_tui.cpp' @()))       { exit 1 }
 
 # ---------- 5. ตรวจผล + รัน ----------
 Head "5/5 ตรวจไฟล์ที่ได้"

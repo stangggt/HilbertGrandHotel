@@ -25,6 +25,9 @@ long jsonInt(const std::string& body, const std::string& key, long def = 0);
 // ดึงค่าข้อความจาก body  {"booker":"สมชาย"} -> สมชาย
 std::string jsonStr(const std::string& body, const std::string& key, size_t maxLen = 120);
 
+// มี key นี้อยู่ใน body หรือไม่ (ใช้แยก "ไม่ได้ส่งมา" ออกจาก "ส่งมาเป็นค่าว่าง")
+bool jsonHas(const std::string& body, const std::string& key);
+
 // อ่านค่าในช่องที่ i ถ้าแถวสั้นกว่าก็คืนค่าว่าง
 std::string at(const std::vector<std::string>& row, size_t i);
 

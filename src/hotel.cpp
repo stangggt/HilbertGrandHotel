@@ -107,7 +107,10 @@ bool loadAll() {
     return !g_rooms.empty();
 }
 
-void saveAll() {
+static bool g_lastSaveOk = true;
+bool lastSaveOk() { return g_lastSaveOk; }
+
+bool saveAll() {
     xlsx::Book book;
 
     xlsx::Sheet sr; sr.name = SH_ROOMS; sr.header = H_ROOMS;
@@ -134,8 +137,10 @@ void saveAll() {
     su.rows = user::saveToRows();
     book.push_back(su);
 
-    if (!xlsx::write(F_DATA, book))
+    g_lastSaveOk = xlsx::write(F_DATA, book);
+    if (!g_lastSaveOk)
         std::cerr << "[WARN] เขียน " << F_DATA << " ไม่สำเร็จ (ไฟล์อาจถูกเปิดค้างใน Excel)\n";
+    return g_lastSaveOk;
 }
 
 
@@ -166,7 +171,13 @@ std::string roomJsonPublic(const Room& m) {
       << "," << q("note")     << ":" << q(m.note)
       << "," << q("typeName") << ":" << q(t ? t->name : m.bed)
       << "," << q("booked")   << ":" << (b ? "true" : "false")
-      << "," << q("detail")   << ":[";
+      << "," << q("booking")  << ":";
+    // หน้าผู้ใช้ทั่วไปเห็นแค่สถานะและช่วงวันที่ ไม่เห็นชื่อ/เบอร์ของผู้จองคนอื่น
+    if (b) o << "{" << q("status")   << ":" << q(b->status)
+             << "," << q("checkIn")  << ":" << q(b->checkIn)
+             << "," << q("checkOut") << ":" << q(b->checkOut) << "}";
+    else   o << "null";
+    o       << "," << q("detail")   << ":[";
     if (t) for (size_t i = 0; i < t->amenities.size(); ++i) {
         if (i) o << ",";
         o << q(t->amenities[i]);

@@ -14,11 +14,15 @@ namespace user {
 std::vector<User> g_users;
 
 void seedDefaults() {
-    if (g_users.empty()) {
-        g_users.push_back({"admin", "admin123", "admin", "System Administrator", "081-000-0001", "admin@hotel.com"});
-        g_users.push_back({"staff", "staff123", "staff", "Front Desk Staff", "081-000-0002", "staff@hotel.com"});
-        g_users.push_back({"guest", "guest123", "guest", "สมชาย ใจดี", "081-234-5678", "somchai@gmail.com"});
-    }
+    // เติมเฉพาะบัญชีที่ยังไม่มี ถ้าไฟล์ Excel มีผู้ใช้อยู่แล้วแต่ลบ admin ทิ้ง
+    // ระบบจะเติม admin กลับให้เอง (เดิมเติมเฉพาะตอนไม่มีผู้ใช้เลย จึงล็อกอินไม่ได้)
+    const User defaults[] = {
+        {"admin", "admin123", "admin", "System Administrator", "081-000-0001", "admin@hotel.com"},
+        {"staff", "staff123", "staff", "Front Desk Staff",     "081-000-0002", "staff@hotel.com"},
+        {"guest", "guest123", "guest", "สมชาย ใจดี",            "081-234-5678", "somchai@gmail.com"},
+    };
+    for (const User& d : defaults)
+        if (!find(d.username)) g_users.push_back(d);
 }
 
 User* find(const std::string& username) {

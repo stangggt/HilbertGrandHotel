@@ -46,7 +46,8 @@ extern const char* SH_USERS;
 // ---------- PART 3 — โหลดและบันทึก ----------
 
 bool loadAll();      // อ่านไฟล์ Excel เข้าตัวแปรทั้ง 3 sheet
-void saveAll();      // เขียนกลับทั้งไฟล์ ครบทั้ง 3 sheet
+bool saveAll();      // เขียนกลับทั้งไฟล์ คืน false ถ้าเขียนไม่สำเร็จ
+bool lastSaveOk();   // ผลของ saveAll() ครั้งล่าสุด
 
 // ---------- PART 4 — ค้นหาและแปลงเป็น JSON ----------
 
