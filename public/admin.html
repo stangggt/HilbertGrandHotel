@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>หน้าจัดการห้อง — แอดมิน</title>
+<title>Hilbert Grand Hotel — หน้าจัดการโรงแรม (Admin)</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,15 +15,20 @@
 
 <main class="page page-wide">
 
-  <!-- ---------- หัวหน้า ---------- -->
+  <!-- ---------- ส่วนหัว ---------- -->
   <header class="masthead">
     <div class="brand">
-      <p class="brand-mark">ADMIN</p>
-      <h1>จัดการห้องและการจอง</h1>
-      <p class="brand-sub">ข้อมูลทั้งหมดอ่านและเขียนกลับลง data/hotel.xlsx — sheet rooms และ bookings</p>
+      <p class="brand-mark">MANAGEMENT DASHBOARD</p>
+      <h1>จัดการห้องพักและการจอง</h1>
+      <p class="brand-sub">ข้อมูลทั้งหมดอ่านและบันทึกกลับลง data/hotel.xlsx (Sheets: rooms, bookings, users)</p>
     </div>
+    
     <div class="head-tools">
-      <a class="ghost" href="/">ดูหน้าผู้ใช้</a>
+      <button class="theme-toggle-btn" id="btn-theme-toggle" type="button" title="สลับธีม สว่าง/มืด">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <div id="admin-user-info" style="display:inline-flex;align-items:center;gap:8px;"></div>
+      <a class="ghost" href="/">← ดูหน้าผู้ใช้</a>
       <a class="ghost" href="/data/hotel.xlsx" download>ดาวน์โหลด hotel.xlsx</a>
       <button id="btn-reload" class="ghost" type="button">โหลดไฟล์ Excel ใหม่</button>
     </div>
@@ -117,44 +122,48 @@
       </div>
       <div class="field">
         <label for="m-nights">จำนวนคืน</label>
-        <input id="m-nights" class="text-in" type="number" min="1" max="30" value="1">
+        <input id="m-nights" class="text-in" type="number" min="1" max="30">
       </div>
     </div>
 
     <div class="field">
       <label for="m-note">หมายเหตุ</label>
-      <input id="m-note" class="text-in" type="text" placeholder="เช่น ขอห้องชั้นล่าง มาถึงดึก">
+      <input id="m-note" class="text-in" type="text">
     </div>
 
     <p id="m-err" class="err"></p>
 
     <div class="modal-actions">
-      <button id="m-cancel" class="btn btn-quiet" type="button">ปิด</button>
+      <button id="m-cancel" class="btn btn-quiet" type="button">ยกเลิก</button>
       <button id="m-save" class="btn btn-book" type="button">บันทึก</button>
     </div>
   </div>
 </div>
 
-<!-- กล่องแก้ราคาห้อง -->
-<div id="rmodal" class="modal hidden">
+
+<!-- ============================================================
+     กล่องแก้ไขราคาและหมายเหตุห้อง
+     ============================================================ -->
+<div id="modal-room" class="modal hidden">
   <div class="modal-box">
-    <h3 id="r-title">แก้ไขข้อมูลห้อง</h3>
-    <p class="pane-sub">แก้แล้วเขียนกลับลง rooms.csv ทันที</p>
+    <h3 id="mr-title">แก้ไขห้อง</h3>
+    <p id="mr-sub" class="pane-sub">เขียนกลับลง sheet rooms</p>
 
     <div class="field">
-      <label for="r-price">ราคาต่อคืน (บาท)</label>
-      <input id="r-price" class="text-in" type="number" min="0" step="50">
-    </div>
-    <div class="field">
-      <label for="r-note">หมายเหตุห้อง</label>
-      <input id="r-note" class="text-in" type="text" placeholder="เช่น ห้องมุม วิวสวน">
+      <label for="mr-price">ราคาต่อคืน (บาท)</label>
+      <input id="mr-price" class="text-in" type="number" min="0" step="50">
     </div>
 
-    <p id="r-err" class="err"></p>
+    <div class="field">
+      <label for="mr-note">หมายเหตุห้อง</label>
+      <input id="mr-note" class="text-in" type="text">
+    </div>
+
+    <p id="mr-err" class="err"></p>
 
     <div class="modal-actions">
-      <button id="r-cancel" class="btn btn-quiet" type="button">ปิด</button>
-      <button id="r-save" class="btn btn-book" type="button">บันทึก</button>
+      <button id="mr-cancel" class="btn btn-quiet" type="button">ยกเลิก</button>
+      <button id="mr-save" class="btn btn-book" type="button">บันทึก</button>
     </div>
   </div>
 </div>

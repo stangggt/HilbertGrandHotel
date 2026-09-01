@@ -1,0 +1,12 @@
+# Build artifacts & binaries
+build/*.o
+build/server
+build/server.exe
+build/tui
+build/tui.exe
+*.o
+*.exe
+
+# System files
+.DS_Store
+Thumbs.db

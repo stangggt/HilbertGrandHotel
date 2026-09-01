@@ -3,6 +3,7 @@
 // ============================================================
 #include "../include/hotel.h"
 #include "../include/reservation.h"
+#include "../include/user.h"
 #include "../include/utils.h"
 #include "../include/xlsx.h"
 
@@ -22,6 +23,7 @@ const char* F_DATA   = "data/hotel.xlsx";
 const char* SH_ROOMS = "rooms";
 const char* SH_TYPES = "room_types";
 const char* SH_BOOK  = "bookings";
+const char* SH_USERS = "users";
 
 static const std::vector<std::string> H_ROOMS =
     {"room_id","floor","bed_type","tier","price","note"};
@@ -30,6 +32,8 @@ static const std::vector<std::string> H_TYPES =
 static const std::vector<std::string> H_BOOK =
     {"booking_id","room_id","booker","phone","email",
      "check_in","check_out","nights","total","status","created_at","note"};
+static const std::vector<std::string> H_USERS =
+    {"username","password","role","full_name","phone","email"};
 
 
 // ============================================================
@@ -94,6 +98,12 @@ bool loadAll() {
             reservation::g_books.push_back(b);
         }
     }
+
+    if (const xlsx::Sheet* sh = xlsx::find(book, SH_USERS)) {
+        user::loadFromRows(sh->rows);
+    } else {
+        user::seedDefaults();
+    }
     return !g_rooms.empty();
 }
 
@@ -119,6 +129,10 @@ void saveAll() {
                            b.checkIn, b.checkOut, std::to_string(b.nights),
                            std::to_string(b.total), b.status, b.createdAt, b.note});
     book.push_back(sb);
+
+    xlsx::Sheet su; su.name = SH_USERS; su.header = H_USERS;
+    su.rows = user::saveToRows();
+    book.push_back(su);
 
     if (!xlsx::write(F_DATA, book))
         std::cerr << "[WARN] เขียน " << F_DATA << " ไม่สำเร็จ (ไฟล์อาจถูกเปิดค้างใน Excel)\n";

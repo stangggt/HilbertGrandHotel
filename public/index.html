@@ -1,160 +1,540 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DEMO_01 — ระบบจองห้องพัก</title>
-
-<!-- ฟอนต์หลัก: Noto Sans Thai -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@200..700&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hilbert Grand Hotel & Resort — Luxury Management & Booking</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-<!-- ============================================================
-     หน้า 1 — เลือกห้อง
-     ============================================================ -->
-<main id="page-rooms" class="page">
+  <!-- Main Application Wrapper -->
+  <div class="app-wrapper">
 
-  <header class="masthead">
-    <div class="brand">
-      <p class="brand-mark">DEMO_01</p>
-      <h1>เลือกห้องพัก</h1>
-      <p class="brand-sub">แตะที่หมายเลขห้องเพื่อดูรายละเอียดและจอง</p>
-    </div>
-    <div class="live">
-      <span class="dot"></span>
-      <span id="live-text">กำลังเชื่อมต่อ</span>
-    </div>
-  </header>
+    <!-- Luxury Sticky Glass Header -->
+    <header class="header-glass">
+      <div class="header-container">
+        
+        <!-- Brand Monogram & Title -->
+        <a href="#" class="brand-section" id="brandHomeLink">
+          <div class="brand-monogram">HGH</div>
+          <div class="brand-text">
+            <h1>Hilbert Grand Hotel</h1>
+            <span>Luxury Resort & Suites</span>
+          </div>
+        </a>
 
-  <section class="stats">
-    <div class="stat">
-      <p class="stat-num" id="stat-free">–</p>
-      <p class="stat-label">ห้องว่าง</p>
-    </div>
-    <div class="stat">
-      <p class="stat-num" id="stat-vip">–</p>
-      <p class="stat-label">VIP ที่ยังว่าง</p>
-    </div>
-    <div class="stat">
-      <p class="stat-num" id="stat-booked">–</p>
-      <p class="stat-label">จองแล้ว</p>
-    </div>
-    <div class="stat stat-wide">
-      <p class="stat-num" id="stat-low">–</p>
-      <p class="stat-label">ราคาเริ่มต้น ต่อคืน</p>
-    </div>
-  </section>
+        <!-- Role-Aware Portal Navigation Tabs -->
+        <nav class="nav-portal-tabs" id="portalNavTabs">
+          <!-- Dynamic navigation injected by JavaScript -->
+        </nav>
 
-  <section class="rack">
-    <div class="rack-labels">
-      <div class="group-label">
-        <p>Twin bed</p>
-        <span>เตียงเดี่ยว 2 เตียง · 3 ห้องต่อชั้น</span>
-      </div>
-      <div class="group-label">
-        <p>Double bed</p>
-        <span>เตียงใหญ่ 1 เตียง · 2 ห้องต่อชั้น</span>
-      </div>
-    </div>
+        <!-- Right Header Utility Actions -->
+        <div class="header-right-actions">
+          
+          <!-- Excel Download Action -->
+          <a class="btn btn-outline btn-sm" href="/data/hotel.xlsx" download title="Download current hotel.xlsx database">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Excel .xlsx</span>
+          </a>
 
-    <div class="rack-body">
-      <div class="rack-split" aria-hidden="true"></div>
-      <div id="grid" class="grid"></div>
-    </div>
+          <!-- Theme Switcher (Dark/Light) -->
+          <button class="btn-icon" id="themeToggleBtn" title="Switch Color Palette">
+            <svg class="svg-icon" id="themeIconSvg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
 
-    <p class="floor-note"><span>ชั้น 1 – 2</span> ห้องมาตรฐาน &nbsp;·&nbsp; <span>ชั้น 3</span> ห้อง VIP</p>
-  </section>
+          <!-- Anchored User Profile Badge Wrapper -->
+          <div class="user-profile-badge-wrapper" id="authHeaderContainer">
+            <!-- Injected by app.js -->
+          </div>
 
-  <section class="legend">
-    <span><i class="sw sw-free"></i>ว่าง</span>
-    <span><i class="sw sw-vip"></i>ห้อง VIP</span>
-    <span><i class="sw sw-booked"></i>จองแล้ว</span>
-    <button id="btn-reset" class="ghost" type="button">ล้างการจองทั้งหมด</button>
-  </section>
-</main>
-
-
-<!-- ============================================================
-     หน้า 2 — การจอง
-     ============================================================ -->
-<main id="page-booking" class="page hidden">
-  <div class="split">
-
-    <!-- ครึ่งซ้าย -->
-    <section class="pane pane-left">
-      <button id="btn-back" class="crumb" type="button">← กลับไปเลือกห้อง</button>
-
-      <div class="head-row">
-        <h2 id="bk-title">Twin bed</h2>
-        <p id="bk-vip" class="vip-badge hidden">VIP</p>
-      </div>
-      <p class="room-no">ห้อง <strong id="bk-room">101</strong></p>
-
-      <div id="bk-art" class="art"></div>
-
-      <p class="price"><strong id="bk-price">0</strong> บาท <span>ต่อคืน ต่อห้อง</span></p>
-
-      <div class="field">
-        <label for="bk-checkin">วันเช็คอิน</label>
-        <input id="bk-checkin" class="text-in" type="date">
-      </div>
-
-      <div class="field">
-        <label for="bk-nights">จำนวนคืนที่เข้าพัก</label>
-        <div class="stepper">
-          <button id="btn-minus" type="button" aria-label="ลดจำนวนคืน">−</button>
-          <input id="bk-nights" type="number" min="1" max="30" value="1" inputmode="numeric">
-          <button id="btn-plus" type="button" aria-label="เพิ่มจำนวนคืน">+</button>
         </div>
-        <p class="checkout-hint">เช็คเอาท์ <span id="bk-checkout">–</span></p>
-      </div>
 
-      <div class="field">
-        <label for="bk-name">ชื่อผู้จอง</label>
-        <input id="bk-name" class="text-in" type="text" placeholder="ชื่อ นามสกุล" autocomplete="name">
       </div>
+    </header>
 
-      <div class="field-row">
-        <div class="field">
-          <label for="bk-phone">เบอร์โทร</label>
-          <input id="bk-phone" class="text-in" type="tel" placeholder="08x-xxx-xxxx" autocomplete="tel">
+    <!-- =========================================================================
+         PORTAL 1: GUEST PORTAL (Airy Hero, Floating Search, Photography Cards)
+         ========================================================================= -->
+    <section id="guestPortal" class="portal-view active">
+      
+      <div class="hero-guest-section">
+        <div class="hero-intro">
+          <div class="hero-tagline">Boutique Hospitality & Luxury Living</div>
+          <h2 class="hero-heading font-serif">Thoughtfully Crafted Comfort & Contemporary Living</h2>
+          <p class="hero-subtext">
+            Experience understated elegance with our curated suites, artisanal comfort, and personalized hospitality services.
+          </p>
         </div>
-        <div class="field">
-          <label for="bk-email">อีเมล</label>
-          <input id="bk-email" class="text-in" type="email" placeholder="name@email.com" autocomplete="email">
+
+        <!-- Floating Command Search Strip -->
+        <div class="floating-search-bar">
+          <div class="search-grid-row">
+            
+            <div class="field-group">
+              <label class="field-label" for="guestRoomTypeSelect">Suite Category</label>
+              <select id="guestRoomTypeSelect" class="field-select">
+                <option value="ALL">All Categories (Standard & VIP)</option>
+                <option value="normal">Standard Suite</option>
+                <option value="vip">VIP Luxury Suite</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="guestBedSelect">Bed Type</label>
+              <select id="guestBedSelect" class="field-select">
+                <option value="ALL">All Bed Configurations</option>
+                <option value="twin">Twin Beds (เตียงเดี่ยว 2)</option>
+                <option value="double">Double / King Bed (เตียงใหญ่ 1)</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="guestStayNightsInput">Duration of Stay</label>
+              <input type="number" id="guestStayNightsInput" class="field-input" min="1" max="30" value="1" placeholder="Nights">
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="guestSearchQuery">Room Number</label>
+              <input type="text" id="guestSearchQuery" class="field-input" placeholder="e.g. 101, 204, 301...">
+            </div>
+
+          </div>
+
+          <!-- Quick Filter Chips & View Switcher -->
+          <div class="filter-chips-row">
+            <div class="chips-wrap">
+              <button class="chip-btn active" id="chipAvailable">
+                <svg class="svg-icon sm" style="color: var(--status-available);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>
+                Available Only
+              </button>
+              <button class="chip-btn" id="chipSortPriceAsc">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                Price: Low to High
+              </button>
+              <button class="chip-btn" id="chipSortPriceDesc">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                Price: High to Low
+              </button>
+              <button class="chip-btn" id="chipVipOnly">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
+                VIP Suites Only
+              </button>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline btn-sm active" id="guestViewCardsBtn">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Suite Cards
+              </button>
+              <button class="btn btn-outline btn-sm" id="guestViewMatrixBtn">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22.01"/><line x1="15" y1="22" x2="15" y2="22.01"/></svg>
+                Floor Blueprint
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <p id="bk-err" class="err"></p>
+      <!-- Guest Content (Grid & My Bookings) -->
+      <div id="guestMainContent">
+        <div id="myBookingsContainer"></div>
+        <div id="guestCardsGrid" class="rooms-grid">
+          <!-- Room cards dynamically injected -->
+        </div>
+      </div>
 
-      <div class="total">
-        <p id="bk-calc">1 คืน × 0 บาท</p>
-        <p class="total-num"><strong id="bk-total">0</strong> บาท</p>
+    </section>
+
+
+    <!-- =========================================================================
+         PORTAL 2: STAFF OPERATIONS PORTAL
+         ========================================================================= -->
+    <section id="staffPortal" class="portal-view">
+      
+      <div style="margin-bottom: 20px;">
+        <h2 class="font-serif" style="font-size: 24px; margin-bottom: 4px;">Staff Operations Hub</h2>
+        <p style="color: var(--text-secondary); font-size: 13.5px;">Real-time room occupancy, guest check-in / check-out controls, and front desk operations.</p>
+      </div>
+
+      <!-- Operational Metrics Strip -->
+      <div class="staff-metrics-strip">
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap green">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>Available Rooms</h4>
+            <span id="staffCountReady">0</span>
+          </div>
+        </div>
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap amber">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>Occupied Stays</h4>
+            <span id="staffCountOccupied">0</span>
+          </div>
+        </div>
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap blue">
+            <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>Waiting Check-In</h4>
+            <span id="staffCountWait">0</span>
+          </div>
+        </div>
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap rose">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>VIP Suites</h4>
+            <span id="staffCountVip">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Front Desk Check-Out & Check-In Queue -->
+      <div style="margin: 28px 0 14px 0; display:flex; justify-content:space-between; align-items:center;">
+        <h3 class="font-serif" style="font-size: 19px;">Front Desk: Active Stays & Check-Out Desk</h3>
+        <button class="btn btn-luxury btn-sm" id="staffNewWalkinBtn">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Walk-in Booking
+        </button>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-responsive">
+          <table class="luxury-table" id="staffCheckoutTable">
+            <thead>
+              <tr>
+                <th>Suite</th>
+                <th>Guest Name</th>
+                <th>Contact</th>
+                <th>Check-In – Out</th>
+                <th>Nights</th>
+                <th>Total Bill</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =========================================================================
+         PORTAL 3: ADMIN EXECUTIVE CONTROL PANEL
+         ========================================================================= -->
+    <section id="adminPortal" class="portal-view">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 class="font-serif" style="font-size: 24px; margin-bottom: 2px;">Executive Control Panel</h2>
+          <p style="color: var(--text-secondary); font-size: 13.5px;">Hotel analytics, real-time revenue audit, room inventory management, and Excel database persistence.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline btn-sm" id="adminReloadExcelBtn">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Reload Excel DB
+          </button>
+        </div>
+      </div>
+
+      <!-- Executive KPI Cards -->
+      <div class="admin-metrics-grid">
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Occupancy Rate</span>
+          <div class="metric-val-text" id="adminKpiOccupancy">0.0%</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);" id="adminKpiOccupancySub">0 of 0 rooms occupied</span>
+        </div>
+
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Active Bookings Revenue</span>
+          <div class="metric-val-text" id="adminKpiRevenue">0 ฿</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);">From active and reserved stays</span>
+        </div>
+
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Average Daily Rate (ADR)</span>
+          <div class="metric-val-text" id="adminKpiAdr">0 ฿</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);">Average price per suite</span>
+        </div>
+
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Total Room Inventory</span>
+          <div class="metric-val-text" id="adminKpiTotalRooms">0</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);" id="adminKpiAvailSub">0 Available</span>
+        </div>
+      </div>
+
+      <!-- Room Inventory CRUD Table -->
+      <div class="data-table-card">
+        <div class="table-toolbar">
+          <div style="font-weight: 700; font-size: 16px;">Room Inventory Management (`hotel.xlsx` sheet `rooms`)</div>
+          <input type="text" id="adminRoomSearchInput" class="field-input" placeholder="Search room..." style="padding: 5px 10px; font-size: 12.5px; width: 170px;">
+        </div>
+
+        <div class="table-responsive">
+          <table class="luxury-table" id="adminRoomsTable">
+            <thead>
+              <tr>
+                <th>Room #</th>
+                <th>Floor</th>
+                <th>Suite Category</th>
+                <th>Bed Type</th>
+                <th>Nightly Rate</th>
+                <th>Status</th>
+                <th>Current Guest</th>
+                <th>Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Financial Transaction / Booking Ledger -->
+      <div class="data-table-card">
+        <div class="table-toolbar">
+          <div style="font-weight: 700; font-size: 16px;">All Booking History (`hotel.xlsx` sheet `bookings`)</div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="luxury-table" id="adminTxnTable">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Room</th>
+                <th>Booker</th>
+                <th>Contact</th>
+                <th>Check-In – Out</th>
+                <th>Nights</th>
+                <th>Total (THB)</th>
+                <th>Status</th>
+                <th>Created At</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =========================================================================
+         SHARED PORTAL: FLOOR BLUEPRINT MATRIX
+         ========================================================================= -->
+    <section id="matrixPortal" class="portal-view">
+      <div style="margin-bottom: 20px;">
+        <h2 class="font-serif" style="font-size: 24px; margin-bottom: 4px;">Architectural Floor Blueprint</h2>
+        <p style="color: var(--text-secondary); font-size: 13.5px;">Live architectural matrix across resort levels showing real-time occupancy and booking states.</p>
+      </div>
+
+      <div class="matrix-container" id="matrixFloorsContainer">
+        <!-- Injected dynamically -->
       </div>
     </section>
 
-    <!-- ครึ่งขวา -->
-    <section class="pane pane-right">
-      <h3>Detail</h3>
-      <p class="pane-sub">สิ่งที่มีอยู่ในห้องนี้</p>
-      <ul id="bk-detail" class="detail"></ul>
-    </section>
+  </div> <!-- End App Wrapper -->
+
+
+  <!-- =========================================================================
+       MODALS & SLIDING DRAWERS
+       ========================================================================= -->
+
+  <!-- Authentication Modal (Sign In & Sign Up with 1-Click Quick Demo Profiles) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-window">
+      
+      <div class="modal-header">
+        <h3 class="font-serif" id="authModalTitle" style="font-size: 18px;">Welcome to Hilbert Grand Hotel</h3>
+        <button class="btn-icon btn-sm" id="authModalCloseBtn">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Auth Mode Switch Tabs -->
+        <div style="display: flex; background: var(--bg-surface-subtle); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+          <button class="btn btn-sm" id="authTabSignIn" style="flex: 1; background: var(--bg-surface); color: var(--text-primary);">Sign In</button>
+          <button class="btn btn-sm" id="authTabSignUp" style="flex: 1; background: transparent; color: var(--text-secondary);">Create Account</button>
+        </div>
+
+        <!-- Quick Demo Profiles Dropdown -->
+        <div class="demo-dropdown-box">
+          <div class="demo-dropdown-toggle" id="demoDropdownToggle">
+            <span>Quick Demo Profiles (1-Click Login)</span>
+            <span id="demoDropdownArrow">▼</span>
+          </div>
+          <div class="demo-chips-grid" id="demoChipsGrid">
+            <button class="demo-chip-btn" data-user="admin" data-pass="admin123" data-role="ADMIN">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
+              Admin (admin)
+            </button>
+            <button class="demo-chip-btn" data-user="staff" data-pass="staff123" data-role="STAFF">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6L12 13l-6.4-6.4"/><path d="M4 14l4 8h8l4-8"/></svg>
+              Staff (staff)
+            </button>
+            <button class="demo-chip-btn" data-user="guest" data-pass="guest123" data-role="GUEST">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Guest (guest)
+            </button>
+          </div>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signInForm" style="display: flex; flex-direction: column; gap: 11px;">
+          <div class="field-group">
+            <label class="field-label" for="signInUsername">Username</label>
+            <input type="text" id="signInUsername" class="field-input" placeholder="e.g. admin or guest" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signInPassword">Password</label>
+            <input type="password" id="signInPassword" class="field-input" placeholder="Enter password" required>
+          </div>
+          <p id="signInErrorMsg" class="err" style="font-size:12px;color:var(--status-maintenance);"></p>
+          <button type="submit" class="btn btn-luxury" style="width: 100%; margin-top: 4px;">
+            Sign In
+          </button>
+        </form>
+
+        <!-- Sign Up Form (Hidden by default) -->
+        <form id="signUpForm" style="display: none; flex-direction: column; gap: 11px;">
+          <div class="field-group">
+            <label class="field-label" for="signUpUsername">Desired Username</label>
+            <input type="text" id="signUpUsername" class="field-input" placeholder="e.g. somchai" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signUpPassword">Password</label>
+            <input type="password" id="signUpPassword" class="field-input" placeholder="Create password (min 4 chars)" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signUpFullName">Full Name</label>
+            <input type="text" id="signUpFullName" class="field-input" placeholder="e.g. สมชาย ใจดี" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signUpPhone">Phone Number</label>
+            <input type="tel" id="signUpPhone" class="field-input" placeholder="08x-xxx-xxxx" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signUpEmail">Email Address</label>
+            <input type="email" id="signUpEmail" class="field-input" placeholder="e.g. somchai@gmail.com">
+          </div>
+          <p id="signUpErrorMsg" class="err" style="font-size:12px;color:var(--status-maintenance);"></p>
+          <button type="submit" class="btn btn-luxury" style="width: 100%; margin-top: 4px;">
+            Create Account
+          </button>
+        </form>
+
+      </div>
+
+    </div>
   </div>
 
-  <footer class="actions">
-    <p id="bk-msg" class="msg"></p>
-    <div class="btn-row">
-      <button id="btn-cancel" class="btn btn-quiet" type="button">ยกเลิก</button>
-      <button id="btn-book" class="btn btn-book" type="button">จอง</button>
-    </div>
-  </footer>
-</main>
 
-<script src="/app.js"></script>
+  <!-- Sliding Side Drawer for Room Check-in, Booking & Details -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="sliding-drawer" id="sideDrawer">
+    
+    <div class="drawer-top-bar">
+      <div>
+        <h3 class="font-serif" id="drawerHeading" style="font-size: 19px;">Suite Details</h3>
+        <span id="drawerSubheading" style="font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px;">Hilbert Grand Hotel</span>
+      </div>
+      <button class="btn-icon btn-sm" id="drawerCloseBtn">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-scroll-body" id="drawerBody">
+      <!-- Injected dynamically -->
+    </div>
+
+    <div class="drawer-bottom-bar" id="drawerFooter">
+      <!-- Actions injected dynamically -->
+    </div>
+
+  </aside>
+
+
+  <!-- Admin Edit Room Price & Notes Modal -->
+  <div class="modal-overlay" id="roomEditModal">
+    <div class="modal-window" style="max-width: 480px;">
+      
+      <div class="modal-header">
+        <h3 class="font-serif" id="roomEditModalTitle" style="font-size: 18px;">Edit Suite Details</h3>
+        <button class="btn-icon btn-sm" id="roomEditModalCloseBtn">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="roomEditForm">
+        <div class="modal-body">
+          <div class="field-group">
+            <label class="field-label" for="modalRoomNum">Room Number</label>
+            <input type="text" id="modalRoomNum" class="field-input" readonly style="background:var(--bg-surface-subtle);">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="modalPrice">Nightly Rate (THB ฿)</label>
+            <input type="number" id="modalPrice" class="field-input" min="0" max="1000000" step="50" required>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="modalNote">Notes / Description</label>
+            <input type="text" id="modalNote" class="field-input" placeholder="e.g. Garden View, Near Elevator">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-sm" id="roomEditModalCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-luxury btn-sm" id="roomEditModalSaveBtn">Save to Excel</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- Floating Role Switcher Bubble (For Testing Permissions) -->
+  <div class="floating-role-bubble" id="floatingRoleBubble">
+    <span class="role-bubble-label">
+      <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Role Switcher:
+    </span>
+    <div class="role-bubble-pills">
+      <button class="role-pill-btn" data-role="admin" id="bubbleRoleAdmin" title="Switch to Administrator (Full access)">
+        👑 Admin
+      </button>
+      <button class="role-pill-btn" data-role="staff" id="bubbleRoleStaff" title="Switch to Front Desk Staff">
+        💼 Staff
+      </button>
+      <button class="role-pill-btn" data-role="guest" id="bubbleRoleGuest" title="Switch to Guest Customer">
+        👤 Guest
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Hub -->
+  <div class="toasts-hub" id="toastsHub"></div>
+
+  <!-- JavaScript -->
+  <script src="/app.js"></script>
 </body>
 </html>

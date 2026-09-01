@@ -38,6 +38,42 @@ const STATUS = {
   cancelled: { label: "ยกเลิก",      cls: "st-cancel" }
 };
 
+function initTheme() {
+  const saved = localStorage.getItem("gh_theme") || "light";
+  document.documentElement.setAttribute("data-theme", saved);
+  const icon = $("theme-icon");
+  if (icon) icon.textContent = saved === "dark" ? "☀️" : "🌙";
+
+  $("btn-theme-toggle")?.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "light";
+    const next = cur === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("gh_theme", next);
+    if (icon) icon.textContent = next === "dark" ? "☀️" : "🌙";
+  });
+}
+
+function initAdminUser() {
+  const info = $("admin-user-info");
+  if (!info) return;
+  try {
+    const raw = localStorage.getItem("gh_user");
+    if (raw) {
+      const u = JSON.parse(raw);
+      info.innerHTML = `
+        <div class="user-profile">
+          <div class="user-avatar">${u.fullName ? u.fullName.charAt(0).toUpperCase() : 'A'}</div>
+          <div>
+            <span style="font-weight:600">${u.fullName || u.username}</span>
+            <span class="role-badge ${u.role || 'admin'}">${u.role || 'ADMIN'}</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+  } catch (e) {}
+  info.innerHTML = `<span class="role-badge admin">ADMIN MODE</span>`;
+}
 
 /* ============================================================
    PART 2 — ชั้นติดต่อ API
@@ -362,5 +398,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeEdit(); closeRoom(); }
 });
 
+initTheme();
+initAdminUser();
 refresh();
 setInterval(refresh, POLL_MS);

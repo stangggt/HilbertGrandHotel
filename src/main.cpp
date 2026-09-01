@@ -11,6 +11,7 @@
 
 #include "../include/hotel.h"
 #include "../include/reservation.h"
+#include "../include/user.h"
 #include "../include/utils.h"
 
 #include <string>
@@ -46,6 +47,45 @@ static std::string handle(const std::string& method,
                           const std::string& body) {
 
     if (method == "OPTIONS") return utils::resp("204 No Content", "text/plain", "");
+
+    // ============================================================
+    // PART 0 — ระบบยืนยันตัวตน (Authentication API)
+    // ============================================================
+
+    // เข้าสู่ระบบ: /api/auth/login
+    if (path == "/api/auth/login" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string username = utils::jsonStr(body, "username", 40);
+        std::string password = utils::jsonStr(body, "password", 60);
+        User* u = user::authenticate(username, password);
+        if (!u) {
+            return utils::jsonErr("401 Unauthorized", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+        }
+        std::cout << "[AUTH] เข้าสู่ระบบสำเร็จ: " << u->username << " (" << u->role << ")\n";
+        return utils::jsonOk("{\"ok\":true,\"user\":" + user::toJson(*u) + "}");
+    }
+
+    // สมัครสมาชิกผู้ใช้ทั่วไป: /api/auth/register
+    if (path == "/api/auth/register" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string username = utils::jsonStr(body, "username", 40);
+        std::string password = utils::jsonStr(body, "password", 60);
+        std::string fullName = utils::jsonStr(body, "fullName", 80);
+        std::string phone    = utils::jsonStr(body, "phone", 25);
+        std::string email    = utils::jsonStr(body, "email", 80);
+
+        Result r = user::registerGuest(username, password, fullName, phone, email);
+        if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
+
+        User* u = user::find(username);
+        return utils::jsonOk("{\"ok\":true,\"user\":" + (u ? user::toJson(*u) : "{}") + "}");
+    }
+
+    // รายชื่อผู้ใช้ทั้งหมด (สำหรับแอดมิน): /api/auth/users
+    if (path == "/api/auth/users" && method == "GET") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        return utils::jsonOk("{\"ok\":true,\"users\":" + user::listJson() + "}");
+    }
 
     // ============================================================
     // PART 1 — API ฝั่งผู้ใช้

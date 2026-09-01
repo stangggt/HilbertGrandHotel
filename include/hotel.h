@@ -41,6 +41,7 @@ extern const char* F_DATA;               // data/hotel.xlsx
 extern const char* SH_ROOMS;
 extern const char* SH_TYPES;
 extern const char* SH_BOOK;
+extern const char* SH_USERS;
 
 // ---------- PART 3 — โหลดและบันทึก ----------
 
