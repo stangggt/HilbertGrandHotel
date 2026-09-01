@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DEMO_01 — ระบบจองห้องพัก</title>
+
+<!-- ฟอนต์หลัก: Noto Sans Thai -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@200..700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ============================================================
+     หน้า 1 — เลือกห้อง
+     ============================================================ -->
+<main id="page-rooms" class="page">
+
+  <header class="masthead">
+    <div class="brand">
+      <p class="brand-mark">DEMO_01</p>
+      <h1>เลือกห้องพัก</h1>
+      <p class="brand-sub">แตะที่หมายเลขห้องเพื่อดูรายละเอียดและจอง</p>
+    </div>
+    <div class="live">
+      <span class="dot"></span>
+      <span id="live-text">กำลังเชื่อมต่อ</span>
+    </div>
+  </header>
+
+  <section class="stats">
+    <div class="stat">
+      <p class="stat-num" id="stat-free">–</p>
+      <p class="stat-label">ห้องว่าง</p>
+    </div>
+    <div class="stat">
+      <p class="stat-num" id="stat-vip">–</p>
+      <p class="stat-label">VIP ที่ยังว่าง</p>
+    </div>
+    <div class="stat">
+      <p class="stat-num" id="stat-booked">–</p>
+      <p class="stat-label">จองแล้ว</p>
+    </div>
+    <div class="stat stat-wide">
+      <p class="stat-num" id="stat-low">–</p>
+      <p class="stat-label">ราคาเริ่มต้น ต่อคืน</p>
+    </div>
+  </section>
+
+  <section class="rack">
+    <div class="rack-labels">
+      <div class="group-label">
+        <p>Twin bed</p>
+        <span>เตียงเดี่ยว 2 เตียง · 3 ห้องต่อชั้น</span>
+      </div>
+      <div class="group-label">
+        <p>Double bed</p>
+        <span>เตียงใหญ่ 1 เตียง · 2 ห้องต่อชั้น</span>
+      </div>
+    </div>
+
+    <div class="rack-body">
+      <div class="rack-split" aria-hidden="true"></div>
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <p class="floor-note"><span>ชั้น 1 – 2</span> ห้องมาตรฐาน &nbsp;·&nbsp; <span>ชั้น 3</span> ห้อง VIP</p>
+  </section>
+
+  <section class="legend">
+    <span><i class="sw sw-free"></i>ว่าง</span>
+    <span><i class="sw sw-vip"></i>ห้อง VIP</span>
+    <span><i class="sw sw-booked"></i>จองแล้ว</span>
+    <button id="btn-reset" class="ghost" type="button">ล้างการจองทั้งหมด</button>
+  </section>
+</main>
+
+
+<!-- ============================================================
+     หน้า 2 — การจอง
+     ============================================================ -->
+<main id="page-booking" class="page hidden">
+  <div class="split">
+
+    <!-- ครึ่งซ้าย -->
+    <section class="pane pane-left">
+      <button id="btn-back" class="crumb" type="button">← กลับไปเลือกห้อง</button>
+
+      <div class="head-row">
+        <h2 id="bk-title">Twin bed</h2>
+        <p id="bk-vip" class="vip-badge hidden">VIP</p>
+      </div>
+      <p class="room-no">ห้อง <strong id="bk-room">101</strong></p>
+
+      <div id="bk-art" class="art"></div>
+
+      <p class="price"><strong id="bk-price">0</strong> บาท <span>ต่อคืน ต่อห้อง</span></p>
+
+      <div class="field">
+        <label for="bk-checkin">วันเช็คอิน</label>
+        <input id="bk-checkin" class="text-in" type="date">
+      </div>
+
+      <div class="field">
+        <label for="bk-nights">จำนวนคืนที่เข้าพัก</label>
+        <div class="stepper">
+          <button id="btn-minus" type="button" aria-label="ลดจำนวนคืน">−</button>
+          <input id="bk-nights" type="number" min="1" max="30" value="1" inputmode="numeric">
+          <button id="btn-plus" type="button" aria-label="เพิ่มจำนวนคืน">+</button>
+        </div>
+        <p class="checkout-hint">เช็คเอาท์ <span id="bk-checkout">–</span></p>
+      </div>
+
+      <div class="field">
+        <label for="bk-name">ชื่อผู้จอง</label>
+        <input id="bk-name" class="text-in" type="text" placeholder="ชื่อ นามสกุล" autocomplete="name">
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="bk-phone">เบอร์โทร</label>
+          <input id="bk-phone" class="text-in" type="tel" placeholder="08x-xxx-xxxx" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label for="bk-email">อีเมล</label>
+          <input id="bk-email" class="text-in" type="email" placeholder="name@email.com" autocomplete="email">
+        </div>
+      </div>
+
+      <p id="bk-err" class="err"></p>
+
+      <div class="total">
+        <p id="bk-calc">1 คืน × 0 บาท</p>
+        <p class="total-num"><strong id="bk-total">0</strong> บาท</p>
+      </div>
+    </section>
+
+    <!-- ครึ่งขวา -->
+    <section class="pane pane-right">
+      <h3>Detail</h3>
+      <p class="pane-sub">สิ่งที่มีอยู่ในห้องนี้</p>
+      <ul id="bk-detail" class="detail"></ul>
+    </section>
+  </div>
+
+  <footer class="actions">
+    <p id="bk-msg" class="msg"></p>
+    <div class="btn-row">
+      <button id="btn-cancel" class="btn btn-quiet" type="button">ยกเลิก</button>
+      <button id="btn-book" class="btn btn-book" type="button">จอง</button>
+    </div>
+  </footer>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

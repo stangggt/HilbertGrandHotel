@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>หน้าจัดการห้อง — แอดมิน</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@200..700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="admin">
+
+<main class="page page-wide">
+
+  <!-- ---------- หัวหน้า ---------- -->
+  <header class="masthead">
+    <div class="brand">
+      <p class="brand-mark">ADMIN</p>
+      <h1>จัดการห้องและการจอง</h1>
+      <p class="brand-sub">ข้อมูลทั้งหมดอ่านและเขียนกลับลง data/hotel.xlsx — sheet rooms และ bookings</p>
+    </div>
+    <div class="head-tools">
+      <a class="ghost" href="/">ดูหน้าผู้ใช้</a>
+      <a class="ghost" href="/data/hotel.xlsx" download>ดาวน์โหลด hotel.xlsx</a>
+      <button id="btn-reload" class="ghost" type="button">โหลดไฟล์ Excel ใหม่</button>
+    </div>
+  </header>
+
+  <!-- ---------- สรุปตัวเลข ---------- -->
+  <section class="stats">
+    <div class="stat"><p class="stat-num" id="k-free">–</p><p class="stat-label">ห้องว่าง</p></div>
+    <div class="stat"><p class="stat-num" id="k-wait">–</p><p class="stat-label">รอเช็คอิน</p></div>
+    <div class="stat"><p class="stat-num" id="k-in">–</p><p class="stat-label">เช็คอินแล้ว</p></div>
+    <div class="stat"><p class="stat-num" id="k-rev">–</p><p class="stat-label">ยอดจองที่ยังใช้งาน</p></div>
+  </section>
+
+  <!-- ---------- แถบเครื่องมือ ---------- -->
+  <section class="toolbar">
+    <div class="tabs" id="tabs">
+      <button class="tab is-on" data-f="all">ทั้งหมด</button>
+      <button class="tab" data-f="free">ว่าง</button>
+      <button class="tab" data-f="wait">รอเช็คอิน</button>
+      <button class="tab" data-f="checkin">เช็คอิน</button>
+      <button class="tab" data-f="checkout">เช็คเอาท์แล้ว</button>
+    </div>
+    <input id="q" class="text-in search" type="search" placeholder="ค้นหา เลขห้อง ชื่อผู้จอง เบอร์ อีเมล">
+  </section>
+
+  <!-- ---------- ตารางห้อง ---------- -->
+  <section class="table-wrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>ห้อง</th>
+          <th>ประเภท</th>
+          <th>ราคา/คืน</th>
+          <th>ผู้จอง</th>
+          <th>ติดต่อ</th>
+          <th>เช็คอิน – เช็คเอาท์</th>
+          <th>ยอดรวม</th>
+          <th>สถานะ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <p id="count" class="count"></p>
+  </section>
+
+  <!-- ---------- ประวัติการจอง ---------- -->
+  <section class="history">
+    <h2>ประวัติการจองทั้งหมด</h2>
+    <p class="pane-sub">ทุกแถวใน sheet bookings เรียงจากใหม่ไปเก่า</p>
+    <div class="table-wrap">
+      <table class="tbl tbl-sm">
+        <thead>
+          <tr><th>รหัส</th><th>ห้อง</th><th>ผู้จอง</th><th>เข้าพัก</th><th>คืน</th><th>ยอด</th><th>สถานะ</th><th>บันทึกเมื่อ</th></tr>
+        </thead>
+        <tbody id="hbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+
+<!-- ============================================================
+     กล่องแก้ไข — ใช้ทั้งเพิ่มการจองใหม่และแก้ของเดิม
+     ============================================================ -->
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <h3 id="m-title">แก้ไขการจอง</h3>
+    <p id="m-sub" class="pane-sub"></p>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="m-name">ชื่อผู้จอง</label>
+        <input id="m-name" class="text-in" type="text">
+      </div>
+      <div class="field">
+        <label for="m-phone">เบอร์โทร</label>
+        <input id="m-phone" class="text-in" type="tel">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="m-email">อีเมล</label>
+      <input id="m-email" class="text-in" type="email">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="m-checkin">วันเช็คอิน</label>
+        <input id="m-checkin" class="text-in" type="date">
+      </div>
+      <div class="field">
+        <label for="m-nights">จำนวนคืน</label>
+        <input id="m-nights" class="text-in" type="number" min="1" max="30" value="1">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="m-note">หมายเหตุ</label>
+      <input id="m-note" class="text-in" type="text" placeholder="เช่น ขอห้องชั้นล่าง มาถึงดึก">
+    </div>
+
+    <p id="m-err" class="err"></p>
+
+    <div class="modal-actions">
+      <button id="m-cancel" class="btn btn-quiet" type="button">ปิด</button>
+      <button id="m-save" class="btn btn-book" type="button">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- กล่องแก้ราคาห้อง -->
+<div id="rmodal" class="modal hidden">
+  <div class="modal-box">
+    <h3 id="r-title">แก้ไขข้อมูลห้อง</h3>
+    <p class="pane-sub">แก้แล้วเขียนกลับลง rooms.csv ทันที</p>
+
+    <div class="field">
+      <label for="r-price">ราคาต่อคืน (บาท)</label>
+      <input id="r-price" class="text-in" type="number" min="0" step="50">
+    </div>
+    <div class="field">
+      <label for="r-note">หมายเหตุห้อง</label>
+      <input id="r-note" class="text-in" type="text" placeholder="เช่น ห้องมุม วิวสวน">
+    </div>
+
+    <p id="r-err" class="err"></p>
+
+    <div class="modal-actions">
+      <button id="r-cancel" class="btn btn-quiet" type="button">ปิด</button>
+      <button id="r-save" class="btn btn-book" type="button">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/admin.js"></script>
+</body>
+</html>
