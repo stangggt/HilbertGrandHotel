@@ -1,0 +1,21 @@
+room_number,floor,room_type,bed_type,capacity,price_per_night,amenities,status,housekeeping_status,current_guest,booked_nights,check_in_date
+101,1,STANDARD,SINGLE,1,85.00,TV;AC;High-Speed WiFi;Espresso Bar,AVAILABLE,READY,,0,
+102,1,STANDARD,DOUBLE,2,95.00,TV;AC;High-Speed WiFi;Artisan Breakfast,OCCUPIED,READY,john_doe,3,2026-08-30
+103,1,STANDARD,DOUBLE,2,95.00,TV;AC;High-Speed WiFi;Garden View,AVAILABLE,READY,,0,
+104,1,STANDARD,SINGLE,1,85.00,TV;AC;High-Speed WiFi;Work Desk,AVAILABLE,CLEANING,,0,
+105,1,DELUXE,DOUBLE,2,145.00,Smart TV;AC;WiFi;Balcony;Artisan Breakfast,AVAILABLE,READY,,0,
+106,1,DELUXE,DOUBLE,2,145.00,Smart TV;AC;WiFi;Balcony;Artisan Breakfast,OCCUPIED,READY,alice,2,2026-08-31
+107,1,STANDARD,DOUBLE,2,95.00,TV;AC;High-Speed WiFi,MAINTENANCE,NEEDS_INSPECTION,,0,
+108,1,STANDARD,SINGLE,1,85.00,TV;AC;High-Speed WiFi,AVAILABLE,READY,,0,
+201,2,DELUXE,DOUBLE,2,155.00,Smart TV;AC;WiFi;Private Balcony;Breakfast,AVAILABLE,READY,,0,
+202,2,DELUXE,KING,2,175.00,Smart TV;AC;WiFi;Private Balcony;Bathtub,AVAILABLE,READY,,0,
+203,2,DELUXE,KING,2,175.00,Smart TV;AC;WiFi;Private Balcony;Bathtub,AVAILABLE,CLEANING,,0,
+204,2,DELUXE,DOUBLE,2,155.00,Smart TV;AC;WiFi;Private Balcony;Breakfast,AVAILABLE,READY,,0,
+205,2,VIP,KING,3,280.00,Smart TV;AC;WiFi;Ocean Balcony;Bathtub;Sea View;Wine Bar,AVAILABLE,READY,,0,
+206,2,VIP,KING,3,280.00,Smart TV;AC;WiFi;Ocean Balcony;Bathtub;Sea View;Wine Bar,OCCUPIED,READY,david_smith,4,2026-08-29
+207,2,DELUXE,DOUBLE,2,155.00,Smart TV;AC;WiFi;Private Balcony;Breakfast,AVAILABLE,READY,,0,
+208,2,STANDARD,DOUBLE,2,110.00,Smart TV;AC;WiFi;Balcony,AVAILABLE,READY,,0,
+301,3,VIP,KING,4,360.00,Smart TV;AC;WiFi;Panoramic Balcony;Breakfast;Jacuzzi;Sea View,AVAILABLE,READY,,0,
+302,3,VIP,KING,4,360.00,Smart TV;AC;WiFi;Panoramic Balcony;Breakfast;Jacuzzi;Sea View,AVAILABLE,READY,,0,
+303,3,VIP,KING,4,360.00,Smart TV;AC;WiFi;Panoramic Balcony;Breakfast;Jacuzzi;Sea View,AVAILABLE,READY,,0,
+304,3,VIP,KING,4,450.00,Smart TV;AC;WiFi;Private Rooftop Pool;Jacuzzi;Butler Service;Sea View,MAINTENANCE,NEEDS_INSPECTION,,0,

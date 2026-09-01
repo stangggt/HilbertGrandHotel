@@ -1,0 +1,10 @@
+# Build artifacts
+build/
+bin/
+*.o
+*.exe
+*.out
+
+# System files
+.DS_Store
+Thumbs.db

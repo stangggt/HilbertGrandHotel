@@ -1,0 +1,7 @@
+username,password,role,full_name,phone,email
+admin,admin123,ADMIN,System Administrator,+1-555-0100,admin@grandhotel.com
+staff,staff123,STAFF,Front Desk & Housekeeping Staff,+1-555-0101,staff@grandhotel.com
+john_doe,pass123,GUEST,John Doe,+1-555-0102,john.doe@example.com
+alice,pass123,GUEST,Alice Wonderland,+1-555-0103,alice@example.com
+david_smith,pass123,GUEST,David Smith,+1-555-0104,david.smith@example.com
+PP,1234,GUEST,phat,1234,phat@gmail.com

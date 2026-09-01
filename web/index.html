@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grand Horizon Boutique Resort & Hotel</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Main Application Wrapper -->
+  <div class="app-wrapper">
+
+    <!-- Luxury Sticky Glass Header -->
+    <header class="header-glass">
+      <div class="header-container">
+        
+        <!-- Brand Monogram & Title -->
+        <a href="#" class="brand-section" id="brandHomeLink">
+          <div class="brand-monogram">GH</div>
+          <div class="brand-text">
+            <h1>Grand Horizon</h1>
+            <span>Boutique Resort & Suites</span>
+          </div>
+        </a>
+
+        <!-- Role-Aware Portal Navigation Tabs (Populated by app.js with SVGs) -->
+        <nav class="nav-portal-tabs" id="portalNavTabs">
+          <!-- Dynamic navigation injected by JavaScript -->
+        </nav>
+
+        <!-- Right Header Utility Actions -->
+        <div class="header-right-actions">
+          
+          <!-- CSV Download Action -->
+          <button class="btn btn-outline btn-sm" id="globalExportCsvBtn" title="Export current rooms.csv database">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>CSV</span>
+          </button>
+
+          <!-- Theme Switcher (Dark/Light) -->
+          <button class="btn-icon" id="themeToggleBtn" title="Switch Color Palette">
+            <svg class="svg-icon" id="themeIconSvg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
+
+          <!-- Anchored User Profile Badge Wrapper -->
+          <div class="user-profile-badge-wrapper" id="authHeaderContainer">
+            <!-- Injected by app.js -->
+          </div>
+
+        </div>
+
+      </div>
+    </header>
+
+    <!-- =========================================================================
+         PORTAL 1: GUEST PORTAL (Airy Hero, Floating Search, Photography Cards)
+         ========================================================================= -->
+    <section id="guestPortal" class="portal-view active">
+      
+      <div class="hero-guest-section">
+        <div class="hero-intro">
+          <div class="hero-tagline">Boutique Hospitality & Suites</div>
+          <h2 class="hero-heading font-serif">Thoughtfully Crafted Comfort & Contemporary Living</h2>
+          <p class="hero-subtext">
+            Immerse yourself in understated luxury with our curated suites, artisanal comfort, and personalized guest services.
+          </p>
+        </div>
+
+        <!-- Floating Command Search Strip (De-nested & Flat) -->
+        <div class="floating-search-bar">
+          <div class="search-grid-row">
+            
+            <div class="field-group">
+              <label class="field-label" for="guestRoomTypeSelect">Suite Category</label>
+              <select id="guestRoomTypeSelect" class="field-select">
+                <option value="ALL">All Categories (Standard, Deluxe, VIP)</option>
+                <option value="STANDARD">Standard Suite ($85 - $110)</option>
+                <option value="DELUXE">Deluxe Balcony & King ($140 - $180)</option>
+                <option value="VIP">VIP Presidential Villa ($280 - $450)</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="guestStayNightsInput">Duration of Stay</label>
+              <input type="number" id="guestStayNightsInput" class="field-input" min="1" max="30" value="1" placeholder="Nights">
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="guestSearchQuery">Room Number Search</label>
+              <input type="text" id="guestSearchQuery" class="field-input" placeholder="e.g. 101, 204...">
+            </div>
+
+            <div class="field-group" style="justify-content: flex-end;">
+              <button class="btn btn-luxury" id="guestSearchBtn">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Find Suites</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Quick Filter Chips & View Switcher -->
+          <div class="filter-chips-row">
+            <div class="chips-wrap">
+              <button class="chip-btn active" id="chipAvailable">
+                <svg class="svg-icon sm" style="color: var(--status-available);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>
+                Available Only
+              </button>
+              <button class="chip-btn" id="chipSortPriceAsc">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                Price: Low to High
+              </button>
+              <button class="chip-btn" id="chipSortPriceDesc">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                Price: High to Low
+              </button>
+              <button class="chip-btn" id="chipReady">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Clean & Ready
+              </button>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline btn-sm active" id="guestViewCardsBtn">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Suite Cards
+              </button>
+              <button class="btn btn-outline btn-sm" id="guestViewMatrixBtn">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22.01"/><line x1="15" y1="22" x2="15" y2="22.01"/></svg>
+                Floor Blueprint
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guest Content (Grid or My Bookings) -->
+      <div id="guestMainContent">
+        <div id="guestCardsGrid" class="rooms-grid">
+          <!-- Room cards dynamically injected -->
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =========================================================================
+         PORTAL 2: STAFF OPERATIONS PORTAL
+         ========================================================================= -->
+    <section id="staffPortal" class="portal-view">
+      
+      <div style="margin-bottom: 20px;">
+        <h2 class="font-serif" style="font-size: 24px; margin-bottom: 4px;">Staff Operations Hub</h2>
+        <p style="color: var(--text-secondary); font-size: 13.5px;">Real-time housekeeping task queues, room readiness controls, and guest check-out processing.</p>
+      </div>
+
+      <!-- Operational Metrics Strip -->
+      <div class="staff-metrics-strip">
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap blue">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6L12 13l-6.4-6.4"/><path d="M4 14l4 8h8l4-8"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>Needs Cleaning</h4>
+            <span id="staffCountCleaning">0</span>
+          </div>
+        </div>
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap green">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>Ready for Check-In</h4>
+            <span id="staffCountReady">0</span>
+          </div>
+        </div>
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap amber">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>Occupied Rooms</h4>
+            <span id="staffCountOccupied">0</span>
+          </div>
+        </div>
+        <div class="staff-metric-tile">
+          <div class="staff-icon-wrap rose">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="staff-text-block">
+            <h4>Maintenance</h4>
+            <span id="staffCountMaintenance">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Housekeeping Task Grid -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin: 20px 0 14px 0;">
+        <h3 class="font-serif" style="font-size: 19px;">Housekeeping & Sanitization Queue</h3>
+        <span class="status-pill cleaning">Live Queue</span>
+      </div>
+
+      <div class="operational-tasks-grid" id="staffHousekeepingGrid">
+        <!-- Injected dynamically -->
+      </div>
+
+      <!-- Front Desk Check-Out Queue -->
+      <div style="margin: 32px 0 14px 0;">
+        <h3 class="font-serif" style="font-size: 19px;">Front Desk: Active Stays & Check-Out Desk</h3>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-responsive">
+          <table class="luxury-table" id="staffCheckoutTable">
+            <thead>
+              <tr>
+                <th>Suite</th>
+                <th>Guest Name</th>
+                <th>Check-In Date</th>
+                <th>Stay Duration</th>
+                <th>Nightly Rate</th>
+                <th>Current Bill</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =========================================================================
+         PORTAL 3: ADMIN EXECUTIVE CONTROL PANEL
+         ========================================================================= -->
+    <section id="adminPortal" class="portal-view">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 class="font-serif" style="font-size: 24px; margin-bottom: 2px;">Executive Control Panel</h2>
+          <p style="color: var(--text-secondary); font-size: 13.5px;">Hotel analytics, real-time revenue audit, inventory CRUD management, and CSV persistence.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-luxury btn-sm" id="adminAddNewRoomBtn">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add New Room
+          </button>
+          <button class="btn btn-outline btn-sm" id="adminResetDbBtn">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Reset CSV Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Executive KPI Cards -->
+      <div class="admin-metrics-grid">
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Occupancy Rate</span>
+          <div class="metric-val-text" id="adminKpiOccupancy">0.0%</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);" id="adminKpiOccupancySub">0 of 20 rooms occupied</span>
+        </div>
+
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Cumulative Revenue</span>
+          <div class="metric-val-text" id="adminKpiRevenue">$0.00</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);">From completed & active stays</span>
+        </div>
+
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Average Daily Rate (ADR)</span>
+          <div class="metric-val-text" id="adminKpiAdr">$0.00</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);">Average price per available room</span>
+        </div>
+
+        <div class="admin-metric-card">
+          <span class="metric-title-text">Total Inventory</span>
+          <div class="metric-val-text" id="adminKpiTotalRooms">20</div>
+          <span style="font-size: 11.5px; color: var(--text-muted);" id="adminKpiAvailSub">15 Available</span>
+        </div>
+      </div>
+
+      <!-- Room Inventory CRUD Table -->
+      <div class="data-table-card">
+        <div class="table-toolbar">
+          <div style="font-weight: 700; font-size: 16px;">Room Inventory Management (C++ Dynamic Array & CSV)</div>
+          <input type="text" id="adminRoomSearchInput" class="field-input" placeholder="Search room..." style="padding: 5px 10px; font-size: 12.5px; width: 170px;">
+        </div>
+
+        <div class="table-responsive">
+          <table class="luxury-table" id="adminRoomsTable">
+            <thead>
+              <tr>
+                <th>Room #</th>
+                <th>Floor</th>
+                <th>Suite Category</th>
+                <th>Bed</th>
+                <th>Capacity</th>
+                <th>Nightly Rate</th>
+                <th>Status</th>
+                <th>Housekeeping</th>
+                <th>Current Guest</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Financial Transaction Ledger -->
+      <div class="data-table-card">
+        <div class="table-toolbar">
+          <div style="font-weight: 700; font-size: 16px;">Financial Audit & Booking Ledger (`transactions.csv`)</div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="luxury-table" id="adminTxnTable">
+            <thead>
+              <tr>
+                <th>Txn ID</th>
+                <th>Room</th>
+                <th>Guest Username</th>
+                <th>Nights</th>
+                <th>Rate / Night</th>
+                <th>Total Billed</th>
+                <th>Timestamp</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =========================================================================
+         SHARED PORTAL: FLOOR BLUEPRINT MATRIX
+         ========================================================================= -->
+    <section id="matrixPortal" class="portal-view">
+      <div style="margin-bottom: 20px;">
+        <h2 class="font-serif" style="font-size: 24px; margin-bottom: 4px;">Architectural Floor Blueprint</h2>
+        <p style="color: var(--text-secondary); font-size: 13.5px;">Live architectural matrix across all resort levels showing occupancy and sanitization states.</p>
+      </div>
+
+      <div class="matrix-container" id="matrixFloorsContainer">
+        <!-- Injected dynamically -->
+      </div>
+    </section>
+
+  </div> <!-- End App Wrapper -->
+
+
+  <!-- =========================================================================
+       MODALS & SLIDING DRAWERS
+       ========================================================================= -->
+
+  <!-- Authentication Modal (Sign In & Sign Up with Collapsible Demo Profiles) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-window">
+      
+      <div class="modal-header">
+        <h3 class="font-serif" id="authModalTitle" style="font-size: 18px;">Welcome to Grand Horizon</h3>
+        <button class="btn-icon btn-sm" id="authModalCloseBtn">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Auth Mode Switch Tabs -->
+        <div style="display: flex; background: var(--bg-surface-subtle); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+          <button class="btn btn-sm" id="authTabSignIn" style="flex: 1; background: var(--bg-surface); color: var(--text-primary);">Sign In</button>
+          <button class="btn btn-sm" id="authTabSignUp" style="flex: 1; background: transparent; color: var(--text-secondary);">Create Account</button>
+        </div>
+
+        <!-- Collapsible Quick Demo Profiles Dropdown -->
+        <div class="demo-dropdown-box">
+          <div class="demo-dropdown-toggle" id="demoDropdownToggle">
+            <span>Quick Demo Profiles (1-Click Login)</span>
+            <span id="demoDropdownArrow">▼</span>
+          </div>
+          <div class="demo-chips-grid" id="demoChipsGrid">
+            <button class="demo-chip-btn" data-user="admin" data-pass="admin123" data-role="ADMIN">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z"/></svg>
+              Admin
+            </button>
+            <button class="demo-chip-btn" data-user="staff" data-pass="staff123" data-role="STAFF">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6L12 13l-6.4-6.4"/><path d="M4 14l4 8h8l4-8"/></svg>
+              Staff
+            </button>
+            <button class="demo-chip-btn" data-user="john_doe" data-pass="pass123" data-role="GUEST">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Guest (John)
+            </button>
+          </div>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signInForm" style="display: flex; flex-direction: column; gap: 11px;">
+          <div class="field-group">
+            <label class="field-label" for="signInUsername">Username</label>
+            <input type="text" id="signInUsername" class="field-input" placeholder="e.g. admin or john_doe" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signInPassword">Password</label>
+            <input type="password" id="signInPassword" class="field-input" placeholder="Enter password" required>
+          </div>
+          <button type="submit" class="btn btn-luxury" style="width: 100%; margin-top: 4px;">
+            Sign In
+          </button>
+        </form>
+
+        <!-- Sign Up Form (Hidden by default) -->
+        <form id="signUpForm" style="display: none; flex-direction: column; gap: 11px;">
+          <div class="field-group">
+            <label class="field-label" for="signUpUsername">Desired Username</label>
+            <input type="text" id="signUpUsername" class="field-input" placeholder="e.g. sarah_connor" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signUpPassword">Password</label>
+            <input type="password" id="signUpPassword" class="field-input" placeholder="Create password" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signUpFullName">Full Name</label>
+            <input type="text" id="signUpFullName" class="field-input" placeholder="e.g. Sarah Connor" required>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signUpEmail">Email Address</label>
+            <input type="email" id="signUpEmail" class="field-input" placeholder="e.g. sarah@example.com">
+          </div>
+          <button type="submit" class="btn btn-luxury" style="width: 100%; margin-top: 4px;">
+            Create Account
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- Sliding Side Drawer for Room Check-in, Management & Details -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="sliding-drawer" id="sideDrawer">
+    
+    <div class="drawer-top-bar">
+      <div>
+        <h3 class="font-serif" id="drawerHeading" style="font-size: 19px;">Suite Details</h3>
+        <span id="drawerSubheading" style="font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px;">Grand Horizon Suites</span>
+      </div>
+      <button class="btn-icon btn-sm" id="drawerCloseBtn">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-scroll-body" id="drawerBody">
+      <!-- Injected dynamically -->
+    </div>
+
+    <div class="drawer-bottom-bar" id="drawerFooter">
+      <!-- Actions injected dynamically -->
+    </div>
+
+  </aside>
+
+
+  <!-- Admin Add / Edit Room Modal -->
+  <div class="modal-overlay" id="roomEditModal">
+    <div class="modal-window" style="max-width: 520px;">
+      
+      <div class="modal-header">
+        <h3 class="font-serif" id="roomEditModalTitle" style="font-size: 18px;">Add New Room</h3>
+        <button class="btn-icon btn-sm" id="roomEditModalCloseBtn">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="roomEditForm">
+        <div class="modal-body">
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="field-group">
+              <label class="field-label" for="modalRoomNum">Room Number</label>
+              <input type="number" id="modalRoomNum" class="field-input" min="100" max="999" placeholder="e.g. 109" required>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="modalFloor">Floor (Auto/Manual)</label>
+              <input type="number" id="modalFloor" class="field-input" min="1" max="10" placeholder="1" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="field-group">
+              <label class="field-label" for="modalRoomType">Suite Category</label>
+              <select id="modalRoomType" class="field-select">
+                <option value="STANDARD">Standard</option>
+                <option value="DELUXE">Deluxe</option>
+                <option value="VIP">VIP Suite</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="modalBedType">Bed Type</label>
+              <select id="modalBedType" class="field-select">
+                <option value="SINGLE">Single</option>
+                <option value="DOUBLE">Double</option>
+                <option value="KING">King Size</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="field-group">
+              <label class="field-label" for="modalCapacity">Max Guests</label>
+              <input type="number" id="modalCapacity" class="field-input" min="1" max="10" value="2" required>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="modalPrice">Nightly Rate ($ USD)</label>
+              <input type="number" id="modalPrice" class="field-input" min="10" max="5000" step="5" value="85.00" required>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="modalAmenities">Amenities (Semicolon Delimited)</label>
+            <input type="text" id="modalAmenities" class="field-input" placeholder="e.g. TV;AC;WiFi;Balcony;Breakfast" value="TV;AC;WiFi;Breakfast">
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-sm" id="roomEditModalCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-luxury btn-sm" id="roomEditModalSaveBtn">Save Room</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- Check-Out Bill Receipt Modal -->
+  <div class="modal-overlay" id="receiptModal">
+    <div class="modal-window" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="font-serif" style="font-size: 18px;">Guest Billing Folio</h3>
+        <button class="btn-icon btn-sm" id="receiptModalCloseBtn">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="receiptBody">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-luxury btn-sm" onclick="window.printReceipt()">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print / Save Folio
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast Hub -->
+  <div class="toasts-hub" id="toastsHub"></div>
+
+  <!-- JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>
