@@ -4,9 +4,17 @@ build/server
 build/server.exe
 build/tui
 build/tui.exe
+build/test_suite
+build/test_suite.exe
+build/benchmark_dsa
+build/benchmark_dsa.exe
 *.o
 *.exe
+
+# Database backups
+data/backups/*.xlsx
 
 # System files
 .DS_Store
 Thumbs.db
+

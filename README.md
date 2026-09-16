@@ -49,14 +49,23 @@
 ### วิธีที่ 1: ใช้ Makefile
 
 ```bash
-# คอมไพล์โปรแกรมทั้งหมด (ทั้ง Web Server และ Terminal TUI)
+# คอมไพล์โปรแกรมทั้งหมด (ทั้ง Web Server, TUI, Test Suite, Benchmark)
 make all
 
-# รัน Web Server (พอร์ต 8093)
+# รัน Web Server โหมดปกติ (Production Mode)
 make run-server
+
+# รัน Web Server โหมดนำเสนอ (Demo Mode เปิด Quick Role Switcher)
+make run-demo
 
 # รัน Terminal TUI
 make run-tui
+
+# รันชุดทดสอบอัตโนมัติ (Automated Unit & Regression Tests)
+make test
+
+# รันการทดสอบประสิทธิภาพโครงสร้างข้อมูล (Academic DSA Benchmark 100k records)
+make benchmark
 
 # ล้างไฟล์คอมไพล์
 make clean
@@ -67,15 +76,17 @@ make clean
 **Linux / macOS**
 ```bash
 ./build.sh
-./build/server    # หรือ ./build/tui
+./build/server          # โหมดปกติ
+./build/server -f demo  # โหมดเดโม (Demo Mode)
 ```
 
 **Windows**
 ```cmd
 build\build.bat
-build\server.exe   REM หรือ build\tui.exe
+build\server.exe        REM โหมดปกติ
+build\server.exe -f demo REM โหมดเดโม
 ```
-*รันในroot folder*
+*รันใน root folder*
 
 | หน้า / ช่องทาง                       | ที่อยู่ / คำสั่ง            |
 | ------------------------------------ | --------------------------- |
@@ -84,6 +95,23 @@ build\server.exe   REM หรือ build\tui.exe
 | หน้าจอคอนโซล (Terminal TUI)          | `./build/tui`               |
 
 `miniz.c` ต้อง compile ด้วย **gcc** แยกจาก C++ ถ้าเอาไปใส่ในคำสั่ง g++ ตรง ๆ จะ error
+
+---
+
+## 👤 บัญชีทดสอบระบบ (Demo Accounts)
+
+ระบบมีบัญชีผู้ใช้เริ่มต้น (Default Seeded Accounts) ที่พร้อมใช้งานทันทีสำหรับทุกบทบาท (Role):
+
+| บทบาท (Role) | Username | Password | ชื่อผู้ใช้ (Full Name) | อีเมล / เบอร์โทร | สิทธิ์การเข้าถึงและการทำงาน (Privileges) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **👑 Admin** | `admin` | `admin123` | System Administrator | `admin@hotel.com`<br>`081-000-0001` | เข้าถึง Executive Control Panel, จัดการผู้ใช้, ดูสถิติรายได้, แก้ราคาห้องพัก, Reload/Backup Excel DB, Terminal Console (`Ctrl+K`), และตรวจสอบ Audit Log |
+| **💼 Staff** | `staff` | `staff123` | Front Desk Staff | `staff@hotel.com`<br>`081-000-0002` | เข้าถึง Staff Operations Hub, ผังห้องพักสด (PMS Matrix), ตรวจสอบข้อมูลผู้จอง (Room Inspector), จัดการ Check-In / Check-Out, ขยายเวลาพัก (Extend Stay), และพิมพ์ใบเสร็จ (Folio) |
+| **👤 Guest** | `guest` | `guest123` | สมชาย ใจดี | `somchai@gmail.com`<br>`081-234-5678` | เข้าถึง Guest Suites, ค้นหาห้องพักตามช่วงวันที่/ราคา/สิ่งอำนวยความสะดวก, จองห้องพัก, ดูประวัติการจองของตนเอง ("My Bookings"), และขอขยายเวลาพัก |
+
+> **💡 โหมดการรันเซิร์ฟเวอร์ (Production vs Demo Mode):**
+> - **Production Mode (ปกติ):** `make run-server` หรือ `./build/server` — ระบบจะซ่อนปุ่มสลับบทบาทอัตโนมัติ (Role Switcher Bubble) และ 1-click profiles เพื่อความปลอดภัยตามมาตรฐาน Production โดยต้องเข้าสู่ระบบด้วย Username & Password จริง
+> - **Demo Mode (นำเสนอ/ตรวจงาน):** `make run-demo` หรือ `./build/server -f demo` — ระบบจะเปิดใช้งาน Quick Demo Profiles (1-Click Login) และ Floating Role Switcher ที่มุมขวาล่าง เพื่อความสะดวกรวดเร็วในการทดสอบและสาธิตระบบ
+
 
 ---
 

@@ -840,13 +840,84 @@ button, input, select, textarea {
 }
 
 /* ==========================================================================
-   2. STAFF PORTAL STYLES
+   2. STAFF PORTAL STYLES (Redesigned PMS Suite)
    ========================================================================== */
+.staff-portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.staff-header-info {
+  max-width: 720px;
+}
+
+.staff-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.staff-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.staff-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7);
+  animation: pulseGold 2s infinite;
+}
+
+@keyframes pulseGold {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(197, 160, 89, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
+}
+
+.staff-date-badge {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.staff-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.3px;
+}
+
+.staff-subtitle {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Metric Strip */
 .staff-metrics-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .staff-metric-tile {
@@ -858,33 +929,139 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   gap: 14px;
+  transition: var(--transition-smooth);
+}
+
+.staff-metric-tile:hover {
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
 }
 
 .staff-icon-wrap {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.staff-icon-wrap.blue { background: var(--status-cleaning-bg); color: var(--status-cleaning); }
+.staff-icon-wrap svg {
+  width: 22px;
+  height: 22px;
+}
+
 .staff-icon-wrap.green { background: var(--status-available-bg); color: var(--status-available); }
 .staff-icon-wrap.amber { background: var(--status-occupied-bg); color: var(--status-occupied); }
+.staff-icon-wrap.blue { background: var(--status-cleaning-bg); color: var(--status-cleaning); }
 .staff-icon-wrap.rose { background: var(--status-maintenance-bg); color: var(--status-maintenance); }
+
+.staff-text-block {
+  display: flex;
+  flex-direction: column;
+}
 
 .staff-text-block h4 {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: var(--text-muted);
-  font-family: var(--font-sans);
+  margin: 0 0 2px 0;
+  font-weight: 600;
 }
 
-.staff-text-block span {
-  font-size: 22px;
+.staff-text-block span#staffCountReady,
+.staff-text-block span#staffCountOccupied,
+.staff-text-block span#staffCountWait,
+.staff-text-block span#staffCountVip {
+  font-size: 24px;
   font-weight: 800;
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  line-height: 1.1;
+}
+
+.staff-metric-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Panel Card Container for Master Roster */
+.staff-panel-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-xs);
+}
+
+.staff-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.staff-panel-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.staff-panel-title {
+  font-size: 20px;
+  margin: 0 0 4px 0;
+  color: var(--text-primary);
+}
+
+.staff-panel-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.staff-roster-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.staff-search-box {
+  position: relative;
+}
+
+.staff-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.staff-search-input {
+  padding: 8px 12px 8px 34px !important;
+  font-size: 12.5px !important;
+  width: 220px;
+  border-radius: var(--radius-sm);
+}
+
+.staff-select-filter {
+  padding: 8px 14px !important;
+  font-size: 12.5px !important;
+  width: 170px;
+  border-radius: var(--radius-sm);
 }
 
 .operational-tasks-grid {
@@ -1060,7 +1237,8 @@ button, input, select, textarea {
 /* ==========================================================================
    Modals, Sliding Drawer & Toasts
    ========================================================================== */
-.modal-overlay {
+.modal-overlay,
+.modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(18, 16, 14, 0.65);
@@ -1076,12 +1254,16 @@ button, input, select, textarea {
   transition: var(--transition);
 }
 
-.modal-overlay.active {
+.modal-overlay.active,
+.modal-overlay.open,
+.modal-backdrop.active,
+.modal-backdrop.open {
   opacity: 1;
   visibility: visible;
 }
 
-.modal-window {
+.modal-window,
+.modal-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-lg);
@@ -1093,7 +1275,10 @@ button, input, select, textarea {
   transition: var(--transition-smooth);
 }
 
-.modal-overlay.active .modal-window {
+.modal-overlay.active .modal-window,
+.modal-overlay.open .modal-window,
+.modal-backdrop.active .modal-card,
+.modal-backdrop.open .modal-card {
   transform: scale(1) translateY(0);
 }
 
@@ -1429,3 +1614,991 @@ button, input, select, textarea {
     border-radius: var(--radius-md);
   }
 }
+
+/* ==========================================================================
+   Amenities Filter Chips
+   ========================================================================== */
+.amenity-chip-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.amenity-chip-btn:hover {
+  border-color: var(--gold-accent);
+  color: var(--text-primary);
+}
+
+.amenity-chip-btn.active {
+  background: rgba(197, 160, 89, 0.15);
+  border-color: var(--gold-accent);
+  color: var(--gold-accent);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Audit Log Badges
+   ========================================================================== */
+.badge-action {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.badge-action.create { background: rgba(46, 125, 50, 0.15); color: #2e7d32; }
+.badge-action.status { background: rgba(2, 136, 209, 0.15); color: #0288d1; }
+.badge-action.extend { background: rgba(123, 31, 162, 0.15); color: #7b1fa2; }
+.badge-action.price  { background: rgba(239, 108, 0, 0.15); color: #ef6c00; }
+.badge-action.reload { background: rgba(100, 116, 139, 0.15); color: #64748b; }
+
+/* ==========================================================================
+   Role Badges
+   ========================================================================== */
+.badge-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.badge-role.admin { background: rgba(217, 119, 6, 0.15); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.3); }
+.badge-role.staff { background: rgba(37, 99, 235, 0.15); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3); }
+.badge-role.guest { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.3); }
+
+/* ==========================================================================
+   Terminal Console Modal (Ctrl+K)
+   ========================================================================== */
+.console-modal-card {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  animation: consolePop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes consolePop {
+  0% { transform: scale(0.96) translateY(-8px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.term-chip {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.term-chip:hover {
+  background: #334155;
+  color: #38bdf8;
+  border-color: #0284c7;
+}
+
+/* ==========================================================================
+   Table Display Density Controls
+   ========================================================================== */
+.density-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.density-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.density-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.density-btn.active {
+  background: var(--bg-surface);
+  color: var(--accent);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Density: Compact */
+.luxury-table.table-compact th,
+.luxury-table.table-compact td {
+  padding: 6px 10px;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+/* Density: Comfortable (Default) */
+.luxury-table.table-comfortable th,
+.luxury-table.table-comfortable td {
+  padding: 11px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Density: Spacious */
+.luxury-table.table-spacious th,
+.luxury-table.table-spacious td {
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ==========================================================================
+   Sortable Table Headers
+   ========================================================================== */
+th.th-sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+th.th-sortable:hover {
+  background: var(--bg-surface-subtle);
+  color: var(--accent);
+}
+
+.sort-indicator {
+  display: inline-block;
+  font-size: 10px;
+  margin-left: 4px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+th.th-sortable.sorted-asc .sort-indicator {
+  color: var(--accent);
+}
+
+th.th-sortable.sorted-desc .sort-indicator {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   Keyboard Shortcuts Modal & Kbd Styling
+   ========================================================================== */
+kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 11.5px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.shortcuts-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Printable Guest Folio & Invoices
+   ========================================================================== */
+.folio-modal-card {
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+
+.folio-receipt-box {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.folio-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border-medium);
+  margin-bottom: 20px;
+}
+
+.folio-meta-tile {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.folio-meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.folio-meta-value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.folio-line-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.folio-line-items-table th {
+  background: var(--bg-surface-subtle);
+  border-bottom: 2px solid var(--border-medium);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.folio-line-items-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+
+.folio-totals-panel {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.folio-totals-box {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+}
+
+.folio-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.folio-total-row.grand-total {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  border-top: 1px solid var(--border-medium);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.folio-footer-note {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-medium);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ==========================================================================
+   Mobile Search Summary Trigger Bar (<= 768px)
+   ========================================================================== */
+.mobile-search-summary-bar {
+  display: none;
+  margin-bottom: 14px;
+}
+
+.mobile-search-summary-chip {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-full);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mobile-search-summary-chip:active {
+  transform: scale(0.98);
+  border-color: var(--accent);
+}
+
+.mobile-search-badge {
+  background: rgba(184, 131, 78, 0.15);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ==========================================================================
+   Mobile Sticky Bottom Navigation Bar (<= 768px)
+   ========================================================================== */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-medium);
+  z-index: 300;
+  padding: 4px 8px env(safe-area-inset-bottom, 8px) 8px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-nav-item {
+  flex: 1;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 6px 0;
+  border-radius: var(--radius-sm);
+  min-height: 48px;
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.95);
+}
+
+.mobile-nav-item.active {
+  color: var(--accent);
+}
+
+.mobile-nav-item.active .svg-icon {
+  stroke: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Touch Optimization & Accessibility
+   ========================================================================== */
+button, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* ==========================================================================
+   Multi-Device Responsive Breakpoints: Mobile, Tablet, Desktop
+   ========================================================================== */
+
+/* 1. TABLET BREAKPOINT (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-wrapper {
+    padding: 0 20px 60px 20px;
+    max-width: 100%;
+  }
+
+  .rooms-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .staff-metrics-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .admin-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .luxury-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg-surface-elevated);
+    box-shadow: 0 1px 0 var(--border-medium);
+  }
+
+  .sliding-drawer {
+    width: min(480px, 85vw);
+  }
+}
+
+/* 2. MOBILE BREAKPOINT (<= 768px) */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 74px; /* clearance for sticky bottom nav */
+  }
+
+  .app-wrapper {
+    padding: 0 12px 20px 12px;
+  }
+
+  .header-glass {
+    margin: 0 -12px 14px -12px;
+    padding: 8px 12px;
+  }
+
+  .nav-portal-tabs {
+    display: none; /* replaced by mobile bottom nav */
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .floating-role-bubble {
+    bottom: 74px; /* float above bottom nav */
+    right: 12px;
+    left: 12px;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    padding: 6px 10px;
+  }
+
+  /* Collapsible Search on Mobile */
+  .mobile-search-summary-bar {
+    display: block;
+  }
+
+  .floating-search-bar {
+    display: none; /* hidden until toggled */
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    animation: slideToastDown 0.2s ease;
+  }
+
+  .floating-search-bar.mobile-open {
+    display: block;
+  }
+
+  .search-grid-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .rooms-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .staff-metrics-strip,
+  .admin-metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .staff-portal-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .staff-header-actions {
+    width: 100%;
+  }
+
+  .staff-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .staff-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .staff-roster-toolbar {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .staff-search-input {
+    width: 100% !important;
+  }
+
+  .staff-select-filter {
+    width: 100% !important;
+  }
+
+  .staff-pms-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .staff-table-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+  }
+
+  .staff-panel-card {
+    padding: 16px;
+  }
+
+  /* Mobile Bottom-Sheet Modal Transformation */
+  .modal-backdrop, .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-card, .modal-window {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 88vh;
+    animation: slideUpSheet 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border-bottom: none;
+  }
+
+  .modal-card::before, .modal-window::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border-medium);
+    border-radius: 2px;
+    margin: 8px auto 4px auto;
+  }
+
+  .sliding-drawer {
+    width: 100vw;
+  }
+
+  /* Responsive Table-to-Card Transformation */
+  .table-responsive {
+    overflow-x: visible;
+  }
+
+  .luxury-table thead {
+    display: none; /* Hide traditional headers on mobile */
+  }
+
+  .luxury-table,
+  .luxury-table tbody,
+  .luxury-table tr,
+  .luxury-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .luxury-table tr {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .luxury-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--border-subtle);
+    font-size: 13px;
+    text-align: right;
+  }
+
+  .luxury-table td:last-child {
+    border-bottom: none;
+    padding-top: 10px;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .luxury-table td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    text-align: left;
+    margin-right: 12px;
+  }
+
+  .btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 3. DESKTOP & ULTRA-WIDE POLISH (>= 1025px) */
+@media (min-width: 1025px) {
+  .app-wrapper {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  .room-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .admin-metric-card:hover,
+  .staff-metric-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* ==========================================================================
+   Printable Receipt Media Query (@media print)
+   ========================================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+  }
+
+  .no-print,
+  .header-glass,
+  .mobile-bottom-nav,
+  .floating-role-bubble,
+  #toastsHub,
+  .btn,
+  .modal-backdrop:not(#folioModal),
+  .portal-view {
+    display: none !important;
+  }
+
+  #folioModal {
+    position: static !important;
+    background: transparent !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .folio-modal-card {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .folio-printable-area {
+    padding: 0 !important;
+  }
+
+  .folio-line-items-table th,
+  .folio-meta-tile,
+  .folio-totals-box {
+    background: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+  }
+}
+
+/* ==========================================================================
+   Phase 4: Demo Role Switcher Gating (Disabled in production unless -f demo)
+   ========================================================================== */
+body:not(.demo-mode-active) #floatingRoleBubble,
+body:not(.demo-mode-active) #authDemoProfilesBox {
+  display: none !important;
+}
+
+/* ==========================================================================
+   Phase 4: Staff PMS Suite Inventory Master Grid & Cards
+   ========================================================================== */
+.staff-pms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 16px;
+}
+
+.staff-pms-card {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-xs);
+  transition: var(--transition-smooth);
+  cursor: pointer;
+  position: relative;
+}
+
+.staff-pms-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.staff-pms-card.is-occupied {
+  border-left: 4px solid var(--status-occupied);
+}
+
+.staff-pms-card.is-available {
+  border-left: 4px solid var(--status-available);
+}
+
+.staff-pms-card.is-cleaning {
+  border-left: 4px solid var(--status-cleaning);
+}
+
+.staff-pms-card.is-maintenance {
+  border-left: 4px solid var(--status-maintenance);
+}
+
+.staff-pms-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.staff-pms-room-num {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.staff-pms-occupant-box {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 64px;
+  justify-content: center;
+}
+
+.staff-pms-occupant-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.staff-pms-dates {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.staff-pms-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-subtle);
+  font-size: 11.5px;
+}
+
+.staff-queue-card {
+  margin-top: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.staff-table-toolbar {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   Phase 4: Room Inspector Drawer / Modal Details
+   ========================================================================== */
+.inspector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .inspector-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inspector-card {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.inspector-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inspector-meta-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-subtle);
+  font-size: 12.5px;
+}
+
+.inspector-meta-row:last-child {
+  border-bottom: none;
+}
+
+.inspector-meta-label {
+  color: var(--text-muted);
+}
+
+.inspector-meta-val {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.inspector-turnover-box {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.inspector-timeline-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.inspector-timeline-table th {
+  text-align: left;
+  padding: 7px 10px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inspector-timeline-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.inspector-action-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+

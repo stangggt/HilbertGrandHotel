@@ -19,7 +19,7 @@ enum class UserRole {
 
 struct User {
     std::string username;
-    std::string password;
+    std::string password;  // Stored as "sha256$<salt>$<hash>" (or legacy plaintext during upgrade)
     std::string role;      // "admin", "staff", "guest"
     std::string fullName;
     std::string phone;
@@ -46,6 +46,23 @@ Result registerGuest(const std::string& username,
                      const std::string& fullName,
                      const std::string& phone,
                      const std::string& email);
+
+// User CRUD operations for Admin WebUI & Management
+Result createUser(const std::string& username,
+                  const std::string& password,
+                  const std::string& role,
+                  const std::string& fullName,
+                  const std::string& phone,
+                  const std::string& email);
+
+Result updateUser(const std::string& username,
+                  const std::string& role,
+                  const std::string& fullName,
+                  const std::string& phone,
+                  const std::string& email,
+                  const std::string& newPassword = "");
+
+Result deleteUser(const std::string& username, const std::string& actorUsername = "");
 
 std::string toJson(const User& u);
 std::string listJson();

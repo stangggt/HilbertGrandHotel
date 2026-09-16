@@ -139,8 +139,8 @@ std::string resp(const std::string& status, const std::string& mime, const std::
       << "Content-Type: " << mime << "\r\n"
       << "Content-Length: " << body.size() << "\r\n"
       << "Access-Control-Allow-Origin: *\r\n"
-      << "Access-Control-Allow-Headers: Content-Type\r\n"
-      << "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+      << "Access-Control-Allow-Headers: Content-Type, Authorization, X-Auth-Token\r\n"
+      << "Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE\r\n"
       << "Cache-Control: no-store\r\n"
       << "Connection: close\r\n\r\n"
       << body;

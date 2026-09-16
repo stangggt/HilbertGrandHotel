@@ -1,0 +1,33 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build, Unit Tests & DSA Benchmark
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Build Environment
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential
+
+      - name: Verify GCC Version
+        run: g++ --version
+
+      - name: Compile Server & TUI Binaries
+        run: make all
+
+      - name: Run Automated Unit & Regression Tests
+        run: make test
+
+      - name: Run Academic DSA Benchmark Suite (100k Records)
+        run: make benchmark

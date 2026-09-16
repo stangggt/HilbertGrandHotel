@@ -9,6 +9,10 @@
 
 #include <sstream>
 #include <iostream>
+#include <filesystem>
+#include <chrono>
+#include <thread>
+#include <ctime>
 
 namespace hotel {
 
@@ -17,6 +21,7 @@ namespace hotel {
 // ============================================================
 std::vector<Room>     g_rooms;
 std::vector<RoomType> g_types;
+std::vector<AuditLog> g_audits;
 std::mutex            g_mtx;
 
 const char* F_DATA   = "data/hotel.xlsx";
@@ -24,6 +29,7 @@ const char* SH_ROOMS = "rooms";
 const char* SH_TYPES = "room_types";
 const char* SH_BOOK  = "bookings";
 const char* SH_USERS = "users";
+const char* SH_AUDIT = "audit_log";
 
 static const std::vector<std::string> H_ROOMS =
     {"room_id","floor","bed_type","tier","price","note"};
@@ -34,6 +40,8 @@ static const std::vector<std::string> H_BOOK =
      "check_in","check_out","nights","total","status","created_at","note"};
 static const std::vector<std::string> H_USERS =
     {"username","password","role","full_name","phone","email"};
+static const std::vector<std::string> H_AUDIT =
+    {"log_id","timestamp","actor_user","actor_role","action_type","target_entity","diff"};
 
 
 // ============================================================
@@ -43,6 +51,7 @@ bool loadAll() {
     using utils::at;
     g_rooms.clear();
     g_types.clear();
+    g_audits.clear();
     reservation::g_books.clear();
 
     xlsx::Book book;
@@ -104,7 +113,50 @@ bool loadAll() {
     } else {
         user::seedDefaults();
     }
-    return !g_rooms.empty();
+
+    if (const xlsx::Sheet* sh = xlsx::find(book, SH_AUDIT)) {
+        for (auto& r : sh->rows) {
+            if (at(r,0).empty()) continue;
+            AuditLog al;
+            al.id           = at(r,0);
+            al.timestamp    = at(r,1);
+            al.actorUser    = at(r,2);
+            al.actorRole    = at(r,3);
+            al.actionType   = at(r,4);
+            al.targetEntity = at(r,5);
+            al.diff         = at(r,6);
+            g_audits.push_back(al);
+        }
+    }
+
+    bool ok = !g_rooms.empty();
+    if (ok) {
+        std::string backupPath;
+        createBackupSnapshot(&backupPath);
+    }
+    return ok;
+}
+
+bool createBackupSnapshot(std::string* outBackupPath) {
+    namespace fs = std::filesystem;
+    try {
+        fs::create_directories("data/backups");
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+        char buf[64];
+        std::strftime(buf, sizeof(buf), "data/backups/hotel_%Y%m%d_%H%M%S.xlsx", &tm);
+        std::string backupFile = buf;
+
+        if (fs::exists(F_DATA)) {
+            fs::copy_file(F_DATA, backupFile, fs::copy_options::overwrite_existing);
+            if (outBackupPath) *outBackupPath = backupFile;
+            std::cout << "[BACKUP] สร้างสำรองฐานข้อมูลสำเร็จ: " << backupFile << "\n";
+            return true;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "[BACKUP ERROR] " << e.what() << "\n";
+    }
+    return false;
 }
 
 static bool g_lastSaveOk = true;
@@ -137,10 +189,60 @@ bool saveAll() {
     su.rows = user::saveToRows();
     book.push_back(su);
 
-    g_lastSaveOk = xlsx::write(F_DATA, book);
+    xlsx::Sheet sa; sa.name = SH_AUDIT; sa.header = H_AUDIT;
+    for (auto& al : g_audits)
+        sa.rows.push_back({al.id, al.timestamp, al.actorUser, al.actorRole,
+                           al.actionType, al.targetEntity, al.diff});
+    book.push_back(sa);
+
+    // Staging write & lock retry loop (retry up to 3 attempts with 300ms delay)
+    g_lastSaveOk = false;
+    for (int attempt = 1; attempt <= 3; ++attempt) {
+        g_lastSaveOk = xlsx::write(F_DATA, book);
+        if (g_lastSaveOk) break;
+        std::cerr << "[WARN] เขียน " << F_DATA << " ไม่สำเร็จ (พยายามครั้งที่ " << attempt << "/3)...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
     if (!g_lastSaveOk)
-        std::cerr << "[WARN] เขียน " << F_DATA << " ไม่สำเร็จ (ไฟล์อาจถูกเปิดค้างใน Excel)\n";
+        std::cerr << "[ERROR] เขียน " << F_DATA << " ล้มเหลวครบ 3 ครั้ง (ไฟล์อาจถูกเปิดค้างใน Excel)\n";
     return g_lastSaveOk;
+}
+
+void logAction(const std::string& actorUser, const std::string& actorRole,
+               const std::string& actionType, const std::string& targetEntity,
+               const std::string& diff) {
+    AuditLog al;
+    char buf[24];
+    snprintf(buf, sizeof(buf), "LOG-%04zu", g_audits.size() + 1);
+    al.id           = buf;
+    al.timestamp    = utils::nowStr();
+    al.actorUser    = actorUser.empty() ? "system" : actorUser;
+    al.actorRole    = actorRole.empty() ? "system" : actorRole;
+    al.actionType   = actionType;
+    al.targetEntity = targetEntity;
+    al.diff         = diff;
+    g_audits.push_back(al);
+}
+
+std::string auditLogsJson() {
+    using utils::q;
+    std::ostringstream o;
+    o << "[";
+    for (size_t i = 0; i < g_audits.size(); ++i) {
+        if (i) o << ",";
+        // แสดงรายการจากล่าสุดไปเก่าสุด
+        const auto& a = g_audits[g_audits.size() - 1 - i];
+        o << "{" << q("id")           << ":" << q(a.id)
+          << "," << q("timestamp")    << ":" << q(a.timestamp)
+          << "," << q("actorUser")    << ":" << q(a.actorUser)
+          << "," << q("actorRole")    << ":" << q(a.actorRole)
+          << "," << q("actionType")   << ":" << q(a.actionType)
+          << "," << q("targetEntity") << ":" << q(a.targetEntity)
+          << "," << q("diff")         << ":" << q(a.diff)
+          << "}";
+    }
+    o << "]";
+    return o.str();
 }
 
 
@@ -181,6 +283,22 @@ std::string roomJsonPublic(const Room& m) {
     if (t) for (size_t i = 0; i < t->amenities.size(); ++i) {
         if (i) o << ",";
         o << q(t->amenities[i]);
+    }
+    o << "]";
+
+    // ส่งช่วงวันที่ที่ถูกจองไปทั้งหมด เพื่อให้หน้าเว็บใช้กรองค้นหาตามช่วงวันที่ได้ทันที
+    o << "," << q("activeBookings") << ":[";
+    bool firstB = true;
+    for (const auto& bk : reservation::g_books) {
+        if (bk.roomId == m.id && reservation::holdsRoom(bk.status)) {
+            if (!firstB) o << ",";
+            firstB = false;
+            o << "{" << q("id")       << ":" << q(bk.id)
+              << "," << q("checkIn")  << ":" << q(bk.checkIn)
+              << "," << q("checkOut") << ":" << q(bk.checkOut)
+              << "," << q("status")   << ":" << q(bk.status)
+              << "}";
+        }
     }
     o << "]}";
     return o.str();

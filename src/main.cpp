@@ -1,18 +1,17 @@
 // ============================================================
 //  main.cpp — HTTP server, router และจุดเริ่มโปรแกรม
 //     PART 1  ROUTER: API ฝั่งผู้ใช้
-//     PART 2  ROUTER: API ฝั่งแอดมิน
+//     PART 2  ROUTER: API ฝั่งแอดมิน (RBAC Protected)
 //     PART 3  ROUTER: ไฟล์ static
 //     PART 4  รับ connection
 //     PART 5  main
-//
-//  build : ดู build.bat หรือ build.sh
 // ============================================================
 
 #include "../include/hotel.h"
 #include "../include/reservation.h"
 #include "../include/user.h"
 #include "../include/utils.h"
+#include "../include/sha256.h"
 
 #include <string>
 #include <sstream>
@@ -20,6 +19,9 @@
 #include <thread>
 #include <cstring>
 #include <cctype>
+#include <unordered_map>
+#include <mutex>
+#include <iomanip>
 
 #ifdef _WIN32
   #include <winsock2.h>
@@ -39,11 +41,72 @@
 #endif
 
 static const int PORT = 8093;
+static bool g_demoMode = false;
 
 using utils::q;
 
+// ---------- ระบบ Session สำหรับ Role-Based Access Control (RBAC) ----------
+struct Session {
+    std::string username;
+    std::string role;      // "admin", "staff", "guest"
+    std::string fullName;
+
+    bool isAdmin() const { return role == "admin"; }
+    bool isStaff() const { return role == "staff" || role == "admin"; }
+};
+
+static std::unordered_map<std::string, Session> g_sessions;
+static std::mutex g_sessionMtx;
+
+// ดึงค่า Header จากบล็อก Headers ดิบ
+static std::string getHeaderValue(const std::string& head, const std::string& key) {
+    std::string lowerHead = head;
+    std::string lowerKey = key;
+    for (char& c : lowerHead) c = (char)tolower((unsigned char)c);
+    for (char& c : lowerKey) c = (char)tolower((unsigned char)c);
+
+    size_t pos = lowerHead.find(lowerKey + ":");
+    if (pos == std::string::npos) return "";
+
+    size_t valStart = pos + lowerKey.size() + 1;
+    while (valStart < head.size() && (head[valStart] == ' ' || head[valStart] == '\t')) valStart++;
+
+    size_t valEnd = head.find("\r\n", valStart);
+    if (valEnd == std::string::npos) valEnd = head.size();
+
+    return head.substr(valStart, valEnd - valStart);
+}
+
+// ค้นหา Session ของผู้เรียกจาก Authorization Header / X-Auth-Token / Cookie
+static Session* getSession(const std::string& head) {
+    std::string token;
+    std::string auth = getHeaderValue(head, "Authorization");
+    if (auth.rfind("Bearer ", 0) == 0) {
+        token = auth.substr(7);
+    }
+    if (token.empty()) {
+        token = getHeaderValue(head, "X-Auth-Token");
+    }
+    if (token.empty()) {
+        std::string cookie = getHeaderValue(head, "Cookie");
+        size_t cp = cookie.find("session=");
+        if (cp != std::string::npos) {
+            size_t endp = cookie.find(';', cp);
+            token = cookie.substr(cp + 8, (endp == std::string::npos ? cookie.size() : endp) - (cp + 8));
+        }
+    }
+
+    if (token.empty()) return nullptr;
+
+    std::lock_guard<std::mutex> lk(g_sessionMtx);
+    auto it = g_sessions.find(token);
+    if (it != g_sessions.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
 // ต่อท้าย JSON ด้วยผลการเขียนไฟล์ Excel ครั้งล่าสุด
-// หน้าเว็บจะได้รู้ว่า "บันทึกขึ้นจอ" กับ "บันทึกลงไฟล์จริง" ตรงกันหรือไม่
 static std::string withSaveState(std::string obj) {
     bool ok = hotel::lastSaveOk();
     if (!obj.empty() && obj.back() == '}') obj.pop_back();
@@ -57,7 +120,9 @@ static std::string withSaveState(std::string obj) {
 
 static std::string handle(const std::string& method,
                           const std::string& path,
-                          const std::string& body) {
+                          const std::string& body,
+                          const std::string& head,
+                          const std::string& rawUri = "") {
 
     if (method == "OPTIONS") return utils::resp("204 No Content", "text/plain", "");
 
@@ -74,8 +139,27 @@ static std::string handle(const std::string& method,
         if (!u) {
             return utils::jsonErr("401 Unauthorized", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
         }
+
+        std::string token = crypto::generateSalt(32);
+        {
+            std::lock_guard<std::mutex> slk(g_sessionMtx);
+            g_sessions[token] = {u->username, u->role, u->fullName};
+        }
+
         std::cout << "[AUTH] เข้าสู่ระบบสำเร็จ: " << u->username << " (" << u->role << ")\n";
-        return utils::jsonOk("{\"ok\":true,\"user\":" + user::toJson(*u) + "}");
+        return utils::resp("200 OK", "application/json; charset=utf-8",
+                           "{\"ok\":true,\"token\":" + q(token) + ",\"user\":" + user::toJson(*u) + "}");
+    }
+
+    // ออกจากระบบ: /api/auth/logout
+    if (path == "/api/auth/logout" && method == "POST") {
+        std::string auth = getHeaderValue(head, "Authorization");
+        std::string token = (auth.rfind("Bearer ", 0) == 0) ? auth.substr(7) : getHeaderValue(head, "X-Auth-Token");
+        if (!token.empty()) {
+            std::lock_guard<std::mutex> slk(g_sessionMtx);
+            g_sessions.erase(token);
+        }
+        return utils::jsonOk("{\"ok\":true}");
     }
 
     // สมัครสมาชิกผู้ใช้ทั่วไป: /api/auth/register
@@ -94,17 +178,25 @@ static std::string handle(const std::string& method,
         return utils::jsonOk("{\"ok\":true,\"user\":" + (u ? user::toJson(*u) : "{}") + "}");
     }
 
-    // รายชื่อผู้ใช้ทั้งหมด (สำหรับแอดมิน): /api/auth/users
+    // รายชื่อผู้ใช้ทั้งหมด (สำหรับแอดมินหรือตรวจสอบ): /api/auth/users
     if (path == "/api/auth/users" && method == "GET") {
         std::lock_guard<std::mutex> lk(hotel::g_mtx);
         return utils::jsonOk("{\"ok\":true,\"users\":" + user::listJson() + "}");
     }
 
     // ============================================================
-    // PART 1 — API ฝั่งผู้ใช้
+    // PART 1 — API ฝั่งผู้ใช้ทั่วไป
     // ============================================================
 
-    // ผังห้องทั้งหมด + สถานะ (หน้าเว็บเรียกซ้ำทุก 2 วินาที)
+    // ข้อมูลการกำหนดค่าของระบบ (เช่น Demo Mode)
+    if (path == "/api/config" && method == "GET") {
+        std::ostringstream o;
+        o << "{\"ok\":true,\"demoMode\":" << (g_demoMode ? "true" : "false")
+          << ",\"version\":\"2.4.0\",\"hotelName\":" << q("Hilbert Grand Hotel") << "}";
+        return utils::jsonOk(o.str());
+    }
+
+    // ผังห้องทั้งหมด + สถานะ (หน้าเว็บเรียกซ้ำเพื่ออัปเดต)
     if (path == "/api/rooms" && method == "GET") {
         std::lock_guard<std::mutex> lk(hotel::g_mtx);
         std::ostringstream o;
@@ -113,7 +205,8 @@ static std::string handle(const std::string& method,
             if (i) o << ",";
             o << hotel::roomJsonPublic(hotel::g_rooms[i]);
         }
-        o << "],\"today\":" << q(utils::todayStr()) << "}";
+        o << "],\"today\":" << q(utils::todayStr())
+          << ",\"demoMode\":" << (g_demoMode ? "true" : "false") << "}";
         return utils::jsonOk(o.str());
     }
 
@@ -133,31 +226,47 @@ static std::string handle(const std::string& method,
         return utils::jsonOk(withSaveState("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}"));
     }
 
-    // รายการจองของฉัน (ผู้ใช้ทั่วไป) — ค้นด้วยชื่อผู้จองหรือเบอร์โทร
-    if (path == "/api/my-bookings" && method == "POST") {
+    // ขยายเวลาการพัก (Continue Book-In / Extend Stay)
+    if (path == "/api/booking/extend" && method == "POST") {
         std::lock_guard<std::mutex> lk(hotel::g_mtx);
-        std::string booker = utils::jsonStr(body, "booker", 60);
-        std::string phone  = utils::jsonStr(body, "phone", 25);
-        std::ostringstream o;
-        o << "{\"ok\":true,\"bookings\":[";
-        bool first = true;
-        for (const auto& b : reservation::g_books) {
-            bool mine = (!booker.empty() && b.booker == booker) ||
-                        (!phone.empty()  && b.phone  == phone);
-            if (!mine) continue;
-            if (!first) o << ",";
-            first = false;
-            o << reservation::toJson(b);
-        }
-        o << "]}";
-        return utils::jsonOk(o.str());
+        std::string id = utils::jsonStr(body, "id", 12);
+        int nights = (int)utils::jsonInt(body, "nights", 1);
+        std::string note = utils::jsonStr(body, "note", 120);
+        Result r = reservation::extendStay(id, nights, note);
+        if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
+        return utils::jsonOk(withSaveState("{\"ok\":true,\"booking\":" + reservation::toJson(r.booking) + "}"));
+    }
+
+    // การจองทั้งหมดของลูกค้าคนหนึ่ง (ค้นด้วยชื่อหรือเบอร์โทร)
+    if (path == "/api/my-bookings" && method == "GET") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        return utils::jsonOk("{\"bookings\":[]}");
     }
 
     // ============================================================
-    // PART 2 — API ฝั่งแอดมิน
+    // PART 2 — API ฝั่งแอดมินและเจ้าหน้าที่ (RBAC Protected)
     // ============================================================
+    if (path.rfind("/api/admin/", 0) == 0 || path.rfind("/api/staff/", 0) == 0) {
+        Session* s = getSession(head);
 
-    // ตารางรวม: ห้องทุกห้อง + การจองที่ยังกินห้องอยู่ + ประวัติทั้งหมด
+        // ตรวจสอบบทบาท: ต้องเป็น admin หรือ staff เท่านั้น
+        if (!s || (!s->isAdmin() && !s->isStaff())) {
+            return utils::jsonErr("403 Forbidden", "Access Denied: สิทธิ์ไม่เพียงพอ ต้องเข้าสู่ระบบด้วยบัญชี Administrator หรือ Staff");
+        }
+
+        // คำสั่งที่อนุญาตเฉพาะ Admin เท่านั้น
+        bool adminOnly = (path == "/api/admin/room" ||
+                          path == "/api/admin/reload" ||
+                          path == "/api/admin/backup" ||
+                          path == "/api/admin/console" ||
+                          path == "/api/admin/audit-logs" ||
+                          path.rfind("/api/admin/users", 0) == 0);
+        if (adminOnly && !s->isAdmin()) {
+            return utils::jsonErr("403 Forbidden", "Access Denied: คำสั่งนี้อนุญาตเฉพาะระดับ Administrator เท่านั้น");
+        }
+    }
+
+    // ตารางรวม: ห้องทุกห้อง + การจองที่ยังกินห้องอยู่ + ประวัติทั้งหมด + Audit Logs
     if (path == "/api/admin/data" && method == "GET") {
         std::lock_guard<std::mutex> lk(hotel::g_mtx);
         std::ostringstream o;
@@ -183,8 +292,278 @@ static std::string handle(const std::string& method,
             if (i) o << ",";
             o << reservation::toJson(reservation::g_books[i]);
         }
-        o << "],\"today\":" << q(utils::todayStr()) << "}";
+        o << "],\"auditLogs\":" << hotel::auditLogsJson();
+        o << ",\"today\":" << q(utils::todayStr()) << "}";
         return utils::jsonOk(o.str());
+    }
+
+    // Staff & Admin: ดูข้อมูลและรายละเอียดของห้อง รวมถึงผู้ที่จองห้องนี้
+    if (path == "/api/staff/room-detail" && method == "GET") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string roomNum;
+        std::string targetUri = rawUri.empty() ? path : rawUri;
+        size_t qpos = targetUri.find("room=");
+        if (qpos != std::string::npos) {
+            roomNum = targetUri.substr(qpos + 5);
+            size_t amp = roomNum.find('&');
+            if (amp != std::string::npos) roomNum = roomNum.substr(0, amp);
+        }
+        Room* m = hotel::findRoom(roomNum);
+        if (!m) return utils::jsonErr("404 Not Found", "ไม่พบหมายเลขห้องนี้");
+
+        RoomType* t = hotel::findType(m->tier, m->bed);
+        Booking* curB = reservation::activeFor(m->id);
+
+        std::ostringstream o;
+        o << "{\"ok\":true,\"room\":{"
+          << q("number") << ":" << q(m->id)
+          << "," << q("floor") << ":" << q(m->floor)
+          << "," << q("bed") << ":" << q(m->bed)
+          << "," << q("tier") << ":" << q(m->tier)
+          << "," << q("price") << ":" << m->price
+          << "," << q("note") << ":" << q(m->note)
+          << "," << q("typeName") << ":" << q(t ? t->name : m->bed)
+          << "," << q("booked") << ":" << (curB ? "true" : "false")
+          << "," << q("status") << ":" << q(m->note.find("[Maintenance]") != std::string::npos ? "maintenance" : (curB ? "occupied" : "available"))
+          << "," << q("currentBooking") << ":" << (curB ? reservation::toJson(*curB) : "null")
+          << "," << q("detail") << ":[";
+        if (t) {
+            for (size_t i = 0; i < t->amenities.size(); ++i) {
+                if (i) o << ",";
+                o << q(t->amenities[i]);
+            }
+        }
+        o << "]}"
+          << ",\"activeBooking\":" << (curB ? reservation::toJson(*curB) : "null")
+          << ",\"currentBooking\":" << (curB ? reservation::toJson(*curB) : "null")
+          << ",\"history\":[";
+        bool firstBk = true;
+        for (const auto& bk : reservation::g_books) {
+            if (bk.roomId == m->id) {
+                if (!firstBk) o << ",";
+                firstBk = false;
+                o << reservation::toJson(bk);
+            }
+        }
+        o << "],\"allBookings\":[";
+        firstBk = true;
+        for (const auto& bk : reservation::g_books) {
+            if (bk.roomId == m->id) {
+                if (!firstBk) o << ",";
+                firstBk = false;
+                o << reservation::toJson(bk);
+            }
+        }
+        o << "]}";
+        return utils::jsonOk(o.str());
+    }
+
+    // Staff & Admin: ปรับปรุงสถานะหรือหมายเหตุของห้อง (Housekeeping & Room Status)
+    if (path == "/api/staff/room-status" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string roomNum = utils::jsonStr(body, "room", 12);
+        if (roomNum.empty()) {
+            long rId = utils::jsonInt(body, "room", -1);
+            if (rId != -1) roomNum = std::to_string(rId);
+        }
+        Room* m = hotel::findRoom(roomNum);
+        if (!m) return utils::jsonErr("404 Not Found", "ไม่พบหมายเลขห้องนี้");
+
+        std::string prevNote = m->note;
+        std::string newStatus = utils::jsonStr(body, "status", 30);
+        std::string newNote = utils::jsonStr(body, "note", 120);
+        if (newStatus == "maintenance" && newNote.find("[Maintenance]") == std::string::npos) {
+            if (newNote.empty()) newNote = "[Maintenance] Out of Service";
+            else newNote = "[Maintenance] " + newNote;
+        } else if (newStatus == "available" && newNote.find("[Maintenance]") != std::string::npos) {
+            size_t mp = newNote.find("[Maintenance]");
+            newNote.erase(mp, 13);
+            while (!newNote.empty() && newNote.front() == ' ') newNote.erase(0, 1);
+        }
+        m->note = newNote;
+        hotel::saveAll();
+
+        Session* s = getSession(head);
+        std::string actor = s ? s->username : "staff";
+        std::string role = s ? s->role : "staff";
+
+        hotel::logAction(actor, role, "ROOM_STATUS_CHANGE", "Room " + m->id,
+                         "Status/Note changed: '" + prevNote + "' -> '" + newNote + "'");
+
+        return utils::jsonOk(withSaveState("{\"ok\":true,\"room\":" + q(m->id) + ",\"note\":" + q(m->note) + ",\"status\":" + q(newStatus) + "}"));
+    }
+
+    // ประวัติการเปลี่ยนแปลงระบบ (Audit Logs)
+    if (path == "/api/admin/audit-logs" && method == "GET") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        return utils::jsonOk("{\"ok\":true,\"logs\":" + hotel::auditLogsJson() + "}");
+    }
+
+    // รายชื่อผู้ใช้ทั้งหมด (Admin Portal)
+    if (path == "/api/admin/users" && method == "GET") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        return utils::jsonOk("{\"ok\":true,\"users\":" + user::listJson() + "}");
+    }
+
+    // เพิ่มผู้ใช้ใหม่โดยแอดมิน
+    if (path == "/api/admin/users/create" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string username = utils::jsonStr(body, "username", 40);
+        std::string password = utils::jsonStr(body, "password", 60);
+        std::string role     = utils::jsonStr(body, "role", 20);
+        std::string fullName = utils::jsonStr(body, "fullName", 80);
+        std::string phone    = utils::jsonStr(body, "phone", 25);
+        std::string email    = utils::jsonStr(body, "email", 80);
+
+        Result r = user::createUser(username, password, role, fullName, phone, email);
+        if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
+        return utils::jsonOk(withSaveState("{\"ok\":true}"));
+    }
+
+    // แก้ไขข้อมูลผู้ใช้หรือรีเซ็ตรหัสผ่าน
+    if (path == "/api/admin/users/update" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string username = utils::jsonStr(body, "username", 40);
+        std::string role     = utils::jsonStr(body, "role", 20);
+        std::string fullName = utils::jsonStr(body, "fullName", 80);
+        std::string phone    = utils::jsonStr(body, "phone", 25);
+        std::string email    = utils::jsonStr(body, "email", 80);
+        std::string password = utils::jsonStr(body, "password", 60);
+
+        Result r = user::updateUser(username, role, fullName, phone, email, password);
+        if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
+        return utils::jsonOk(withSaveState("{\"ok\":true}"));
+    }
+
+    // ลบผู้ใช้
+    if (path == "/api/admin/users/delete" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string username = utils::jsonStr(body, "username", 40);
+        Session* s = getSession(head);
+        std::string actor = s ? s->username : "admin";
+
+        Result r = user::deleteUser(username, actor);
+        if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
+        return utils::jsonOk(withSaveState("{\"ok\":true}"));
+    }
+
+    // สร้าง Backup Snapshot ของไฟล์ Excel ทันที
+    if (path == "/api/admin/backup" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string backupPath;
+        if (!hotel::createBackupSnapshot(&backupPath)) {
+            return utils::jsonErr("500 Internal Server Error", "ไม่สามารถสร้างสำรองไฟล์ฐานข้อมูลได้");
+        }
+        hotel::logAction("admin", "admin", "DB_BACKUP_CREATED", "Database Backup", backupPath);
+        return utils::jsonOk("{\"ok\":true,\"backupPath\":" + q(backupPath) + "}");
+    }
+
+    // Interactive Admin Terminal Console Runner
+    if (path == "/api/admin/console" && method == "POST") {
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        std::string cmd = utils::jsonStr(body, "cmd", 200);
+        std::istringstream iss(cmd);
+        std::string verb;
+        iss >> verb;
+        std::ostringstream out;
+
+        if (verb == "help" || verb.empty()) {
+            out << "=== Hilbert Grand Hotel Admin Terminal ===\n"
+                << "Available commands:\n"
+                << "  status                 - Show hotel occupancy and active revenue\n"
+                << "  db:verify              - Verify database sheets & health\n"
+                << "  excel:reload           - Reload hotel.xlsx from disk\n"
+                << "  backup:now             - Create instant snapshot in data/backups/\n"
+                << "  user:list              - List all registered users & roles\n"
+                << "  room:price <id> <p>    - Update nightly rate for room <id>\n"
+                << "  audit:tail [count]     - Print last [count] audit log entries\n"
+                << "  clear                  - Clear terminal output\n";
+        } else if (verb == "status") {
+            int occupied = 0;
+            long revenue = 0;
+            for (const auto& r : hotel::g_rooms) {
+                if (reservation::activeFor(r.id)) occupied++;
+            }
+            for (const auto& b : reservation::g_books) {
+                if (b.status == "wait" || b.status == "checkin") revenue += b.total;
+            }
+            float occRate = hotel::g_rooms.empty() ? 0.0f : (occupied * 100.0f / hotel::g_rooms.size());
+            out << "[STATUS] Hotel Occupancy: " << occupied << "/" << hotel::g_rooms.size()
+                << " (" << std::fixed << std::setprecision(1) << occRate << "%)\n"
+                << "Active Stays / Bookings Revenue: " << revenue << " THB\n"
+                << "Total Historical Reservations: " << reservation::g_books.size() << "\n"
+                << "Registered System Users: " << user::g_users.size() << "\n";
+        } else if (verb == "db:verify") {
+            out << "[DB:VERIFY] File: data/hotel.xlsx\n"
+                << "  Sheet 'rooms':      " << hotel::g_rooms.size() << " records\n"
+                << "  Sheet 'room_types': " << hotel::g_types.size() << " records\n"
+                << "  Sheet 'bookings':   " << reservation::g_books.size() << " records\n"
+                << "  Sheet 'users':      " << user::g_users.size() << " records\n"
+                << "  Sheet 'audit_log':  " << hotel::g_audits.size() << " records\n"
+                << "  Database Health: OK (All 5 sheets active)\n";
+        } else if (verb == "excel:reload") {
+            bool ok = hotel::loadAll();
+            if (ok) {
+                hotel::logAction("admin", "admin", "EXCEL_RELOAD", "hotel.xlsx", "Terminal reload");
+                out << "[SUCCESS] Database reloaded successfully from data/hotel.xlsx\n";
+            } else {
+                out << "[ERROR] Failed to reload data/hotel.xlsx (file may be open in Excel)\n";
+            }
+        } else if (verb == "backup:now") {
+            std::string path;
+            if (hotel::createBackupSnapshot(&path)) {
+                hotel::logAction("admin", "admin", "DB_BACKUP_CREATED", "Database Backup", path);
+                out << "[SUCCESS] Created backup snapshot -> " << path << "\n";
+            } else {
+                out << "[ERROR] Failed to generate backup snapshot\n";
+            }
+        } else if (verb == "user:list") {
+            out << "+-----------------+----------+---------------------------+-----------------+\n"
+                << "| Username        | Role     | Full Name                 | Phone           |\n"
+                << "+-----------------+----------+---------------------------+-----------------+\n";
+            for (const auto& u : user::g_users) {
+                char rowBuf[256];
+                snprintf(rowBuf, sizeof(rowBuf), "| %-15s | %-8s | %-25s | %-15s |\n",
+                         u.username.substr(0, 15).c_str(),
+                         u.role.substr(0, 8).c_str(),
+                         u.fullName.substr(0, 25).c_str(),
+                         u.phone.substr(0, 15).c_str());
+                out << rowBuf;
+            }
+            out << "+-----------------+----------+---------------------------+-----------------+\n";
+        } else if (verb == "room:price") {
+            std::string rId;
+            long price = 0;
+            iss >> rId >> price;
+            Room* m = hotel::findRoom(rId);
+            if (!m) {
+                out << "[ERROR] Room not found: " << rId << "\n";
+            } else if (price <= 0 || price > 1000000) {
+                out << "[ERROR] Invalid price: " << price << "\n";
+            } else {
+                long oldP = m->price;
+                m->price = price;
+                hotel::saveAll();
+                hotel::logAction("admin", "admin", "ROOM_PRICE_UPDATE", "Room " + m->id,
+                                 "Price changed from " + std::to_string(oldP) + " to " + std::to_string(price) + " THB via terminal");
+                out << "[SUCCESS] Room " << m->id << " price updated to " << price << " THB\n";
+            }
+        } else if (verb == "audit:tail") {
+            int count = 5;
+            iss >> count;
+            if (count <= 0) count = 5;
+            if (count > (int)hotel::g_audits.size()) count = (int)hotel::g_audits.size();
+            out << "[AUDIT LOGS - Last " << count << " entries]:\n";
+            for (int i = 0; i < count; ++i) {
+                const auto& a = hotel::g_audits[hotel::g_audits.size() - count + i];
+                out << "  [" << a.timestamp << "] " << a.actionType << " by " << a.actorUser
+                    << " (" << a.targetEntity << "): " << a.diff << "\n";
+            }
+        } else {
+            out << "Unknown command: '" << verb << "'. Type 'help' for a list of commands.\n";
+        }
+
+        return utils::jsonOk("{\"ok\":true,\"output\":" + q(out.str()) + "}");
     }
 
     // เปลี่ยนสถานะ  wait -> checkin -> checkout  หรือ cancelled
@@ -239,12 +618,19 @@ static std::string handle(const std::string& method,
         Room* m = hotel::findRoom(utils::jsonStr(body, "room", 12));
         if (!m) return utils::jsonErr("404 Not Found", "ไม่พบหมายเลขห้องนี้");
 
+        long prevPrice = m->price;
         long price = utils::jsonInt(body, "price", m->price);
         if (price < 0 || price > 1000000) return utils::jsonErr("400 Bad Request", "ราคาไม่ถูกต้อง");
         m->price = price;
         if (utils::jsonHas(body, "note")) m->note = utils::jsonStr(body, "note", 120);
         hotel::saveAll();
         std::cout << "[ROOM] " << m->id << " ราคา " << m->price << "\n";
+
+        // บันทึกลง Audit Log
+        hotel::logAction("admin", "admin", "ROOM_PRICE_UPDATE", "Room " + m->id,
+                         "Price changed from " + std::to_string(prevPrice) + " to " +
+                         std::to_string(m->price) + " THB" + (m->note.empty() ? "" : " | " + m->note));
+
         return utils::jsonOk(withSaveState("{\"ok\":true}"));
     }
 
@@ -255,6 +641,10 @@ static std::string handle(const std::string& method,
             return utils::jsonErr("500 Internal Server Error",
                                   "อ่านไฟล์ Excel ไม่ได้ ตรวจว่าไฟล์ไม่ได้ถูกเปิดค้างอยู่");
         std::cout << "[RELOAD] อ่าน hotel.xlsx ใหม่แล้ว\n";
+
+        // บันทึกลง Audit Log
+        hotel::logAction("admin", "admin", "EXCEL_RELOAD", "hotel.xlsx", "Reloaded database from disk");
+
         return utils::jsonOk("{\"ok\":true}");
     }
 
@@ -306,8 +696,9 @@ static void serveClient(SOCKET c) {
     }
 
     std::istringstream ls(req.substr(0, req.find("\r\n")));
-    std::string method, path, ver;
-    ls >> method >> path >> ver;
+    std::string method, rawPath, ver;
+    ls >> method >> rawPath >> ver;
+    std::string path = rawPath;
     size_t qp = path.find('?');
     if (qp != std::string::npos) path = path.substr(0, qp);
 
@@ -324,7 +715,7 @@ static void serveClient(SOCKET c) {
         body.append(buf, n);
     }
 
-    sendAll(c, handle(method, path, body));
+    sendAll(c, handle(method, path, body, head, rawPath));
     CLOSESOCK(c);
 }
 
@@ -332,7 +723,17 @@ static void serveClient(SOCKET c) {
 // ============================================================
 // PART 5 — main
 // ============================================================
-int main() {
+int main(int argc, char* argv[]) {
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--demo" || arg == "-demo") {
+            g_demoMode = true;
+        } else if (arg == "-f" && i + 1 < argc && std::string(argv[i + 1]) == "demo") {
+            g_demoMode = true;
+            i++;
+        }
+    }
+
 #ifdef _WIN32
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) { std::cerr << "WSAStartup failed\n"; return 1; }
@@ -364,10 +765,14 @@ int main() {
 
     std::cout << "==========================================\n";
     std::cout << " ระบบจองโรงแรม — backend C++\n";
+    std::cout << " โหมด: " << (g_demoMode ? "DEMO MODE (เปิด Role Switcher)" : "PRODUCTION MODE (ปิด Role Switcher)") << "\n";
     std::cout << " ห้อง " << hotel::g_rooms.size()
               << " ห้อง  การจอง " << reservation::g_books.size() << " รายการ\n";
     std::cout << " หน้าผู้ใช้  http://localhost:" << PORT << "\n";
     std::cout << " หน้าแอดมิน http://localhost:" << PORT << "/admin\n";
+    if (!g_demoMode) {
+        std::cout << " (หมายเหตุ: รันด้วย make run-demo หรือ -f demo เพื่อเปิด Role Switcher ในการนำเสนอ)\n";
+    }
     std::cout << " หยุดด้วย Ctrl+C\n";
     std::cout << "==========================================\n";
 

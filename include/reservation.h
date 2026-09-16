@@ -44,6 +44,14 @@ Booking* find(const std::string& id);
 // สถานะที่ยัง "กินห้อง" อยู่ = wait หรือ checkin
 bool holdsRoom(const std::string& status);
 
+// ตรวจสอบว่าช่วงวันที่สองช่วงทับซ้อนกันหรือไม่ [s1, e1) กับ [s2, e2)
+bool datesOverlap(const std::string& s1, const std::string& e1,
+                  const std::string& s2, const std::string& e2);
+
+// ตรวจสอบหารายการจองที่ทับซ้อนกับช่วงวันที่ระบุ
+Booking* collisionFor(const std::string& roomId, const std::string& checkIn,
+                      int nights, const std::string& excludeBookingId = "");
+
 // การจองที่ยังกินห้องนี้อยู่ ถ้าไม่มีแปลว่าห้องว่าง
 Booking* activeFor(const std::string& roomId);
 
@@ -56,6 +64,9 @@ Result create(const std::string& roomId, const std::string& booker,
               const std::string& phone,  const std::string& email,
               const std::string& checkIn, int nights,
               const std::string& note, const std::string& status);
+
+// ขยายเวลาการพัก (Continue Book-In / Extend Stay)
+Result extendStay(const std::string& id, int additionalNights, const std::string& note = "");
 
 // แก้ไขรายละเอียดการจอง คำนวณวันเช็คเอาท์และยอดรวมใหม่ให้
 Result edit(const std::string& id, const std::string& booker,
