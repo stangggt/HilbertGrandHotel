@@ -160,6 +160,10 @@ class HotelAppEngine {
     this.loadSession();
     this.setupEvents();
 
+    if (this.token) {
+      await this.verifySession();
+    }
+
     try {
       const cRes = await fetch("/api/config");
       const cData = await cRes.json();
@@ -204,7 +208,11 @@ class HotelAppEngine {
       options.headers["X-Auth-Token"] = this.token;
     }
     const res = await fetch(url, options);
-    if (res.status === 403) {
+    if (res.status === 401) {
+      this.handleSessionExpired();
+      return res;
+    }
+    if (res.status === 403 && !options.silent) {
       try {
         const err = await res.clone().json();
         this.toast(err.error || "Access Denied: สิทธิ์ไม่เพียงพอ", "error");
@@ -283,7 +291,8 @@ class HotelAppEngine {
 
   async fetchAdminData() {
     try {
-      const res = await this.apiFetch("/api/admin/data");
+      const res = await this.apiFetch("/api/admin/data", { silent: true });
+      if (!res.ok) return;
       const data = await res.json();
       if (data.rooms) this.rooms = data.rooms;
       if (data.bookings) this.bookings = data.bookings;
@@ -296,7 +305,8 @@ class HotelAppEngine {
 
   async fetchAdminUsers() {
     try {
-      const res = await this.apiFetch("/api/admin/users");
+      const res = await this.apiFetch("/api/admin/users", { silent: true });
+      if (!res.ok) return;
       const data = await res.json();
       if (data.ok && data.users) {
         this.adminUsers = data.users;
@@ -415,7 +425,11 @@ class HotelAppEngine {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password, fullName, phone, email })
     });
-    return res.json();
+    const data = await res.json();
+    if (data.ok && data.token) {
+      this.saveSession(data.user, data.token);
+    }
+    return data;
   }
 
   // ---- Session & Theme ----
@@ -457,14 +471,55 @@ class HotelAppEngine {
     this.currentUser = user;
     if (user) {
       localStorage.setItem("gh_user", JSON.stringify(user));
-      if (token) {
+      if (token !== undefined && token !== null) {
         this.token = token;
-        localStorage.setItem("gh_token", token);
+        if (token) localStorage.setItem("gh_token", token);
+        else localStorage.removeItem("gh_token");
       }
     } else {
       localStorage.removeItem("gh_user");
       localStorage.removeItem("gh_token");
       this.token = "";
+      this.currentUser = null;
+    }
+  }
+
+  async verifySession() {
+    if (!this.token) return;
+    try {
+      const res = await fetch("/api/auth/me", {
+        headers: {
+          "Authorization": `Bearer ${this.token}`,
+          "X-Auth-Token": this.token
+        }
+      });
+      if (res.status === 401 || res.status === 403) {
+        this.saveSession(null, null);
+        this.activePortal = "guest";
+        return;
+      }
+      const data = await res.json();
+      if (data && data.ok && data.user) {
+        this.saveSession(data.user, this.token);
+      } else {
+        this.saveSession(null, null);
+        this.activePortal = "guest";
+      }
+    } catch (e) {
+      console.warn("Session check offline or server unavailable:", e);
+    }
+  }
+
+  handleSessionExpired() {
+    if (!this.currentUser && !this.token) return;
+    this.saveSession(null, null);
+    this.activePortal = "guest";
+    this.renderAll();
+
+    const now = Date.now();
+    if (!this.lastExpiredToastTime || (now - this.lastExpiredToastTime > 8000)) {
+      this.lastExpiredToastTime = now;
+      this.toast("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง", "warning");
     }
   }
 
@@ -624,11 +679,7 @@ class HotelAppEngine {
 
       $("popoverSignOutBtn")?.addEventListener("click", (e) => {
         e.stopPropagation();
-        this.saveSession(null);
-        this.bookings = [];
-        this.activePortal = "guest";
-        this.renderAll();
-        this.toast("Signed out successfully");
+        this.logout();
       });
     }
   }
@@ -654,7 +705,6 @@ class HotelAppEngine {
 
     const res = await this.login(u, p);
     if (res.ok && res.user) {
-      this.saveSession(res.user);
       if (targetRole === "admin") this.activePortal = "admin";
       else if (targetRole === "staff") this.activePortal = "staff";
       else this.activePortal = "guest";
@@ -2415,7 +2465,6 @@ class HotelAppEngine {
         const p = btn.dataset.pass;
         const res = await this.login(u, p);
         if (res.ok && res.user) {
-          this.saveSession(res.user);
           this.closeAuthModal();
           this.toast(`Logged in as ${res.user.fullName} (${res.user.role})`);
           await this.refreshData();
@@ -2434,7 +2483,6 @@ class HotelAppEngine {
 
       const res = await this.login(u, p);
       if (res.ok && res.user) {
-        this.saveSession(res.user);
         this.closeAuthModal();
         this.toast(`Welcome, ${res.user.fullName || res.user.username}`);
         await this.refreshData();
@@ -2457,7 +2505,6 @@ class HotelAppEngine {
 
       const res = await this.register(u, p, name, phone, email);
       if (res.ok && res.user) {
-        this.saveSession(res.user);
         this.closeAuthModal();
         this.toast(`Account created! Welcome, ${res.user.fullName}`);
         await this.refreshData();

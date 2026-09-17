@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <iomanip>
+#include <fstream>
 
 #ifdef _WIN32
   #include <winsock2.h>
@@ -57,6 +58,50 @@ struct Session {
 
 static std::unordered_map<std::string, Session> g_sessions;
 static std::mutex g_sessionMtx;
+
+// บันทึก Session ทั้งหมดลงไฟล์ data/sessions.json (ต้องเรียกขณะถือ lock g_sessionMtx)
+static void saveSessionsLocked() {
+    std::ofstream f("data/sessions.json");
+    if (!f.is_open()) return;
+    f << "{\"sessions\":[";
+    bool first = true;
+    for (const auto& kv : g_sessions) {
+        if (!first) f << ",";
+        first = false;
+        f << "{\"token\":" << utils::q(kv.first)
+          << ",\"username\":" << utils::q(kv.second.username)
+          << ",\"role\":" << utils::q(kv.second.role)
+          << ",\"fullName\":" << utils::q(kv.second.fullName)
+          << "}";
+    }
+    f << "]}";
+}
+
+// โหลด Session ที่บันทึกไว้กลับมาเมื่อเซิร์ฟเวอร์เปิดขึ้นใหม่
+static void loadSessionsFromFile() {
+    std::string content;
+    if (!utils::readFile("data/sessions.json", content)) return;
+    std::lock_guard<std::mutex> slk(g_sessionMtx);
+    g_sessions.clear();
+    size_t pos = 0;
+    while ((pos = content.find("{\"token\":", pos)) != std::string::npos) {
+        size_t endObj = content.find("}", pos);
+        if (endObj == std::string::npos) break;
+        std::string obj = content.substr(pos, endObj - pos + 1);
+        std::string tok = utils::jsonStr(obj, "token", 64);
+        std::string u   = utils::jsonStr(obj, "username", 40);
+        std::string r   = utils::jsonStr(obj, "role", 20);
+        std::string fn  = utils::jsonStr(obj, "fullName", 80);
+        if (!tok.empty() && !u.empty()) {
+            if (user::exists(u)) {
+                User* usr = user::find(u);
+                g_sessions[tok] = {u, usr ? usr->role : r, usr ? usr->fullName : fn};
+            }
+        }
+        pos = endObj + 1;
+    }
+    std::cout << "[SESSION] โหลดเซสชันที่บันทึกไว้สำเร็จ: " << g_sessions.size() << " บัญชี\n";
+}
 
 // ดึงค่า Header จากบล็อก Headers ดิบ
 static std::string getHeaderValue(const std::string& head, const std::string& key) {
@@ -130,6 +175,27 @@ static std::string handle(const std::string& method,
     // PART 0 — ระบบยืนยันตัวตน (Authentication API)
     // ============================================================
 
+    // ตรวจสอบสถานะเซสชันปัจจุบันของผู้ใช้: /api/auth/me
+    if (path == "/api/auth/me" && method == "GET") {
+        Session* s = getSession(head);
+        if (!s) {
+            return utils::jsonErr("401 Unauthorized", "เซสชันหมดอายุหรือไม่ถูกต้อง");
+        }
+        std::lock_guard<std::mutex> lk(hotel::g_mtx);
+        User* u = user::find(s->username);
+        if (!u) {
+            std::string auth = getHeaderValue(head, "Authorization");
+            std::string token = (auth.rfind("Bearer ", 0) == 0) ? auth.substr(7) : getHeaderValue(head, "X-Auth-Token");
+            if (!token.empty()) {
+                std::lock_guard<std::mutex> slk(g_sessionMtx);
+                g_sessions.erase(token);
+                saveSessionsLocked();
+            }
+            return utils::jsonErr("401 Unauthorized", "ไม่พบบัญชีผู้ใช้ในระบบ");
+        }
+        return utils::jsonOk("{\"ok\":true,\"user\":" + user::toJson(*u) + "}");
+    }
+
     // เข้าสู่ระบบ: /api/auth/login
     if (path == "/api/auth/login" && method == "POST") {
         std::lock_guard<std::mutex> lk(hotel::g_mtx);
@@ -144,6 +210,7 @@ static std::string handle(const std::string& method,
         {
             std::lock_guard<std::mutex> slk(g_sessionMtx);
             g_sessions[token] = {u->username, u->role, u->fullName};
+            saveSessionsLocked();
         }
 
         std::cout << "[AUTH] เข้าสู่ระบบสำเร็จ: " << u->username << " (" << u->role << ")\n";
@@ -158,6 +225,7 @@ static std::string handle(const std::string& method,
         if (!token.empty()) {
             std::lock_guard<std::mutex> slk(g_sessionMtx);
             g_sessions.erase(token);
+            saveSessionsLocked();
         }
         return utils::jsonOk("{\"ok\":true}");
     }
@@ -175,7 +243,13 @@ static std::string handle(const std::string& method,
         if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
 
         User* u = user::find(username);
-        return utils::jsonOk("{\"ok\":true,\"user\":" + (u ? user::toJson(*u) : "{}") + "}");
+        std::string token = crypto::generateSalt(32);
+        if (u) {
+            std::lock_guard<std::mutex> slk(g_sessionMtx);
+            g_sessions[token] = {u->username, u->role, u->fullName};
+            saveSessionsLocked();
+        }
+        return utils::jsonOk("{\"ok\":true,\"token\":" + q(token) + ",\"user\":" + (u ? user::toJson(*u) : "{}") + "}");
     }
 
     // รายชื่อผู้ใช้ทั้งหมด (สำหรับแอดมินหรือตรวจสอบ): /api/auth/users
@@ -249,8 +323,13 @@ static std::string handle(const std::string& method,
     if (path.rfind("/api/admin/", 0) == 0 || path.rfind("/api/staff/", 0) == 0) {
         Session* s = getSession(head);
 
-        // ตรวจสอบบทบาท: ต้องเป็น admin หรือ staff เท่านั้น
-        if (!s || (!s->isAdmin() && !s->isStaff())) {
+        // 1. ตรวจสอบการยืนยันตัวตน (Authentication): ต้องมี Session ที่ถูกต้องและยังไม่หมดอายุ
+        if (!s) {
+            return utils::jsonErr("401 Unauthorized", "เซสชันหมดอายุหรือไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        }
+
+        // 2. ตรวจสอบการอนุญาต (Authorization): ต้องมีบทบาทเป็น admin หรือ staff เท่านั้น
+        if (!s->isAdmin() && !s->isStaff()) {
             return utils::jsonErr("403 Forbidden", "Access Denied: สิทธิ์ไม่เพียงพอ ต้องเข้าสู่ระบบด้วยบัญชี Administrator หรือ Staff");
         }
 
@@ -444,6 +523,16 @@ static std::string handle(const std::string& method,
 
         Result r = user::deleteUser(username, actor);
         if (!r.ok) return utils::jsonErr(r.httpCode, r.error);
+
+        {
+            std::lock_guard<std::mutex> slk(g_sessionMtx);
+            for (auto it = g_sessions.begin(); it != g_sessions.end(); ) {
+                if (it->second.username == username) it = g_sessions.erase(it);
+                else ++it;
+            }
+            saveSessionsLocked();
+        }
+
         return utils::jsonOk(withSaveState("{\"ok\":true}"));
     }
 
@@ -746,6 +835,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "ต้องรันจากโฟลเดอร์ที่มี data/ และ public/ อยู่ข้าง ๆ\n";
         return 1;
     }
+    loadSessionsFromFile();
 
     SOCKET srv = socket(AF_INET, SOCK_STREAM, 0);
     if (srv == INVALID_SOCKET) { std::cerr << "socket() error\n"; return 1; }

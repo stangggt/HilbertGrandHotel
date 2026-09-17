@@ -11,8 +11,9 @@ build/benchmark_dsa.exe
 *.o
 *.exe
 
-# Database backups
+# Database backups and runtime sessions
 data/backups/*.xlsx
+data/sessions.json
 
 # System files
 .DS_Store

@@ -112,6 +112,135 @@ build\server.exe -f demo REM โหมดเดโม
 > - **Production Mode (ปกติ):** `make run-server` หรือ `./build/server` — ระบบจะซ่อนปุ่มสลับบทบาทอัตโนมัติ (Role Switcher Bubble) และ 1-click profiles เพื่อความปลอดภัยตามมาตรฐาน Production โดยต้องเข้าสู่ระบบด้วย Username & Password จริง
 > - **Demo Mode (นำเสนอ/ตรวจงาน):** `make run-demo` หรือ `./build/server -f demo` — ระบบจะเปิดใช้งาน Quick Demo Profiles (1-Click Login) และ Floating Role Switcher ที่มุมขวาล่าง เพื่อความสะดวกรวดเร็วในการทดสอบและสาธิตระบบ
 
+---
+
+## 🐳 วิธีรันผ่าน Docker (Run on Docker)
+
+**Docker** ช่วยให้คุณรันโปรแกรมได้ทันทีบนทุกเครื่อง (Linux, Windows, macOS) โดยไม่ต้องติดตั้ง C++ Compiler หรือเครื่องมือใดๆ เพิ่มเติม
+
+> **💡 สำหรับ CachyOS (หากยังไม่ได้ลง Docker):**
+> ```bash
+> sudo pacman -S docker
+> sudo systemctl enable --now docker
+> sudo usermod -aG docker $USER    # เพื่อให้รันคำสั่ง docker ได้โดยไม่ต้องพิมพ์ sudo
+> newgrp docker
+> ```
+
+### ขั้นตอนที่ 1: สร้างไฟล์ `Dockerfile`
+สร้างไฟล์ชื่อ `Dockerfile` ไว้ที่โฟลเดอร์หลักของโปรเจกต์ (มีเนื้อหาตามนี้):
+
+```dockerfile
+FROM ubuntu:22.04
+
+# ติดตั้งเครื่องมือคอมไพล์ภาษา C/C++
+RUN apt-get update && apt-get install -y g++ gcc make && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY . .
+
+# คอมไพล์โปรแกรม
+RUN make clean && make server
+
+# เปิดพอร์ตใช้งาน
+EXPOSE 8093
+
+# เริ่มต้นเซิร์ฟเวอร์
+CMD ["./build/server"]
+```
+
+### ขั้นตอนที่ 2: สั่งประกอบร่าง (Build Docker Image)
+เปิด Terminal ในโฟลเดอร์โปรเจกต์ แล้วพิมพ์คำสั่ง:
+```bash
+docker build -t hilbert-hotel .
+```
+
+### ขั้นตอนที่ 3: สั่งรัน (Run Container)
+รันคำสั่งนี้เพื่อเปิดใช้งานเซิร์ฟเวอร์:
+```bash
+docker run -d \
+  --name hotel-app \
+  -p 8093:8093 \
+  -v $(pwd)/data:/app/data \
+  --restart unless-stopped \
+  hilbert-hotel
+```
+
+> **คำอธิบายตัวเลือกสำคัญ:**
+> - `-p 8093:8093` : เชื่อมพอร์ตจากใน Docker ออกมาที่เครื่องเรา ทำให้เข้าเว็บผ่าน `http://localhost:8093` ได้
+> - `-v $(pwd)/data:/app/data` : **สำคัญมาก!** เชื่อมโฟลเดอร์ `data/` กับเครื่องจริง เพื่อให้ไฟล์ฐานข้อมูล Excel (`hotel.xlsx`) และ Session ไม่สูญหายเมื่อปิดหรืออัปเดต Docker
+> - `--restart unless-stopped` : สั่งให้เปิดโปรแกรมใหม่เองอัตโนมัติเมื่อเครื่องเปิด (ดูหัวข้อถัดไป)
+
+---
+
+## ⚡ วิธีตั้งให้โปรแกรมเปิดทำงานอัตโนมัติเมื่อเปิดเครื่อง (Auto-start on Boot)
+
+หากต้องการให้เซิร์ฟเวอร์เปิดตัวเองขึ้นมาทันทีที่เปิดเครื่องคอมพิวเตอร์ หรือเมื่อรีสตาร์ตเซิร์ฟเวอร์ เลือกลองทำตามวิธีที่สะดวกได้ดังนี้:
+
+### วิธีที่ 1: ใช้ Docker (ง่ายที่สุด แนะนำ ⭐)
+หากคุณรันโปรแกรมด้วย Docker อยู่แล้ว แค่ใส่ตัวเลือก `--restart unless-stopped` ในคำสั่งรัน:
+```bash
+docker run -d --name hotel-app -p 8093:8093 -v $(pwd)/data:/app/data --restart unless-stopped hilbert-hotel
+```
+- **ผลลัพธ์:** ทุกครั้งที่เปิดเครื่องคอมพิวเตอร์ขึ้นมา Docker จะสั่งให้เซิร์ฟเวอร์โรงแรมเปิดทำงานในพื้นหลังทันที โดยที่คุณไม่ต้องเปิดหน้าจอ Terminal มากดรันเองเลย
+
+---
+
+### วิธีที่ 2: สำหรับ CachyOS / Arch Linux / Ubuntu Server (ผ่าน systemd Service)
+หากคุณคอมไพล์รันตรงๆ บนเครื่อง CachyOS โดยไม่ใช้ Docker:
+
+> **💡 สำหรับ CachyOS:** หากยังไม่ได้ติดตั้งเครื่องมือคอมไพล์ ให้พิมพ์:
+> ```bash
+> sudo pacman -S base-devel gcc make
+> ```
+
+1. **สร้างไฟล์บริการระบบ:**
+   พิมพ์คำสั่ง:
+   ```bash
+   sudo nano /etc/systemd/system/hilbert-hotel.service
+   ```
+
+2. **ใส่ข้อความด้านล่างนี้ลงไป** (แก้ไข Path โฟลเดอร์ให้ตรงกับที่อยู่ของโปรเจกต์ในเครื่องคุณ):
+   ```ini
+   [Unit]
+   Description=Hilbert Grand Hotel Web Server
+   After=network.target
+
+   [Service]
+   Type=simple
+   User=nuts
+   WorkingDirectory=/home/nuts/Projects/DataStructure/Team/HilbertGrandHotel
+   ExecStart=/home/nuts/Projects/DataStructure/Team/HilbertGrandHotel/build/server
+   Restart=always
+   RestartSec=3
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+3. **สั่งเปิดใช้งานและเริ่มทำงาน:**
+   ```bash
+   # สั่งให้อ่านไฟล์บริการใหม่
+   sudo systemctl daemon-reload
+
+   # สั่งให้เปิดทำงานอัตโนมัติทุกครั้งที่บูตเครื่อง
+   sudo systemctl enable hilbert-hotel
+
+   # เริ่มต้นการทำงานทันที
+   sudo systemctl start hilbert-hotel
+   ```
+- ตรวจสอบสถานะการทำงานได้ด้วยคำสั่ง: `sudo systemctl status hilbert-hotel`
+- สั่งหยุดการทำงาน: `sudo systemctl stop hilbert-hotel`
+- สั่งเริ่มใหม่: `sudo systemctl restart hilbert-hotel`
+
+---
+
+### วิธีที่ 3: สำหรับ Windows
+หากคุณใช้งานบน Windows:
+1. กดปุ่ม `Windows + R` บนคีย์บอร์ด
+2. พิมพ์ `shell:startup` แล้วกด **Enter** (โฟลเดอร์ Startup ของเครื่องจะเปิดขึ้นมา)
+3. คลิกขวาที่ไฟล์ `build/server.exe` (หรือไฟล์ `build.bat`) เลือก **Create shortcut** (สร้างทางลัด)
+4. นำไฟล์ Shortcut นั้นมาวางไว้ในโฟลเดอร์ Startup
+- **ผลลัพธ์:** ทุกครั้งที่คุณเปิดคอมพิวเตอร์และล็อกอินเข้า Windows โปรแกรมเซิร์ฟเวอร์จะเปิดขึ้นมาทำงานให้เองทันที
 
 ---
 

@@ -117,6 +117,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
 }
 
 body {
@@ -128,6 +130,7 @@ body {
   min-height: 100vh;
   transition: background-color var(--transition), color var(--transition);
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 h1, h2, h3, h4, .font-serif {
@@ -136,9 +139,11 @@ h1, h2, h3, h4, .font-serif {
   letter-spacing: -0.015em;
 }
 
-button, input, select, textarea {
+button, input, select, textarea, a, [role="button"] {
   font-family: inherit;
   color: inherit;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
 }
 
 .app-wrapper {
@@ -422,6 +427,25 @@ button, input, select, textarea {
   transition: var(--transition);
   border: 1px solid transparent;
   white-space: nowrap;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn:focus {
+  outline: none !important;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
+
+.btn:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .btn-luxury {
@@ -2018,6 +2042,12 @@ kbd {
   flex: 1;
   background: transparent;
   border: none;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2035,6 +2065,14 @@ kbd {
 
 .mobile-nav-item:active {
   transform: scale(0.95);
+  outline: none !important;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.mobile-nav-item:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .mobile-nav-item.active {
@@ -2047,10 +2085,23 @@ kbd {
 }
 
 /* ==========================================================================
-   Touch Optimization & Accessibility
+   Touch Optimization & Accessibility (No Blue Highlight/Frames on Mobile)
    ========================================================================== */
-button, input, select, textarea {
+button, input, select, textarea, a, [role="button"],
+.btn, .mobile-nav-item, .nav-tab-btn, .role-pill-btn, .demo-chip-btn, .density-btn, .chip, .quick-tag, .staff-pms-card {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+  outline: none;
+}
+
+button:focus:not(:focus-visible),
+.btn:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+.mobile-nav-item:focus:not(:focus-visible),
+.nav-tab-btn:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* ==========================================================================
@@ -2099,6 +2150,18 @@ button, input, select, textarea {
 
 /* 2. MOBILE BREAKPOINT (<= 768px) */
 @media (max-width: 768px) {
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+  }
+
+  button, .btn, .mobile-nav-item, .nav-tab-btn, a, input, select, textarea {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+    -webkit-touch-callout: none;
+  }
+
   body {
     padding-bottom: 74px; /* clearance for sticky bottom nav */
   }
